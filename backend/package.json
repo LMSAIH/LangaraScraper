@@ -1,12 +1,16 @@
 {
   "name": "backend",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "version": "1.0.0",
   "main": "server.ts",
   "scripts": {
     "build": "tsc",
     "dev": "nodemon --exec ts-node server.ts",
     "server": "npm run build && nodemon server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test-scraper": "ts-node Test/TestScrapper.ts"
   },
   "author": "",
   "license": "ISC",
@@ -16,8 +20,11 @@
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.4",
     "axios": "^1.10.0",
+    "cheerio": "^1.1.0",
     "cors": "^2.8.5",
+    "dotenv": "^16.6.0",
     "express": "^5.1.0",
+    "puppeteer": "^24.10.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
