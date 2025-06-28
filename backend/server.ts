@@ -4,6 +4,7 @@ import cors from "cors";
 import {router as CourseRoutes} from "./routes/Client/CourseRoutes";
 import {router as BCTGRouter} from "./routes/Scraper/BCTransferGuide";
 
+
 const app = express();
 
 app.use(express.json());
