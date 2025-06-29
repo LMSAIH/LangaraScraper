@@ -20,6 +20,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     console.log(subjects);
 
     res.json(subjects);
+    
   } catch (error) {
     console.error("Error fetching subjects:", error);
     res.status(500).send("Internal Server Error");
