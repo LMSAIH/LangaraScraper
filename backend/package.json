@@ -18,13 +18,19 @@
   "dependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^24.0.4",
+    "@types/response-time": "^2.3.9",
     "axios": "^1.10.0",
     "cheerio": "^1.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.0",
     "express": "^5.1.0",
+    "mongodb": "^6.17.0",
+    "mongoose": "^8.16.1",
+    "morgan": "^1.10.0",
     "puppeteer": "^24.10.2",
+    "response-time": "^2.3.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
