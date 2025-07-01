@@ -4,6 +4,14 @@ export interface BCTransferSubject {
   Title: string;
 }
 
+export interface MeetingTime {
+  SectionType: string;
+  Days: string;
+  Time: string;
+  Room: string;
+  Instructor: string;
+}
+
 export interface CourseSection {
   crn: string;
   subject: string;
@@ -11,11 +19,7 @@ export interface CourseSection {
   section: string;
   credits: string;
   title: string;
-  type: string;
-  days: string;
-  time: string;
-  room: string;
-  instructor: string;
+  data: MeetingTime[]; 
   seatsAvailable: string;
   waitlist: string;
   additionalFees: string;
