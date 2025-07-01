@@ -218,4 +218,6 @@ const parseCourseData = (html: string): CourseData[] => {
   return courses;
 };
 
+
+
 export { getSubjects, getCourses, parseCourseData };
