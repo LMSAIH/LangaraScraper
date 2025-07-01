@@ -1,4 +1,4 @@
-import { CourseScrapper } from '../Controllers/CourseScrapper';
+import { CourseScrapper } from '../Controllers/TestCourseScrapper';
 
 async function testScraper() {
     console.log('🎯 Starting Langara.ca scraper test...\n');
