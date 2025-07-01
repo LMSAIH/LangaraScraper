@@ -1,233 +1,381 @@
-# Langara College Scraper 🎓
+# Langara Course Scraper API 🎓
 
-A comprehensive web scraper for Langara College (langara.ca) built with **Puppeteer** and **Cheerio**. This scraper provides detailed insights into what's happening on the Langara website by extracting news, programs, courses, events, and notices.
+A comprehensive Node.js/Express API for scraping and managing Langara College course data. This backend provides course information, sections, meeting times, and instructor details through a robust REST API with MongoDB storage.
 
 ## Features ✨
 
-- **📄 Main Page Scraping**: Extracts news, programs, events, and notices from the main Langara page
-- **📚 Course Catalog**: Scrapes available courses with details like code, name, credits, and descriptions
-- **🎓 Program Information**: Extracts featured programs with descriptions and credentials
-- **📰 News & Announcements**: Gets the latest news and announcements
-- **🗓️ Events**: Extracts upcoming events with dates and locations
-- **⚠️ Important Notices**: Captures important alerts and notices
-- **📊 Performance Metrics**: Provides page load times and performance data
-- **📸 Screenshot Capture**: Takes screenshots for debugging and verification
+- **� Course Scraping**: Scrapes course data from Langara's official course catalog
+- **�️ Database Storage**: Stores course data in MongoDB with optimized schema
+- **🔍 Advanced Filtering**: Filter courses by subject, instructor, availability, semester, etc.
+- **📊 Structured Data**: Flattened database structure for optimal performance
+- **🔗 REST API**: Comprehensive endpoints for accessing course data
+- **⚡ Smart Parsing**: Handles multiple meeting times per section (Lecture + Lab)
+- **🎯 BC Transfer Guide**: Integration with BC Transfer Guide data
 
 ## Technology Stack 🛠️
 
-- **Puppeteer**: For browser automation and rendering JavaScript
-- **Cheerio**: For HTML parsing and DOM manipulation
-- **TypeScript**: For type safety and better development experience
-- **Express.js**: For REST API endpoints
-- **Axios**: For HTTP requests when needed
+- **Node.js** + **Express.js**: REST API server
+- **TypeScript**: Type safety and better development experience
+- **MongoDB** + **Mongoose**: Database and ODM
+- **Axios**: HTTP requests for scraping
+- **Cheerio**: HTML parsing and DOM manipulation
+
+## Database Schema 📊
+
+The system uses a **flattened structure** with three main collections:
+
+### CourseData Collection
+```typescript
+interface CourseData {
+  courseCode: string;    // "CPSC 1030"
+  subject: string;       // "CPSC"
+  term: string;          // "202530"
+  year: number;          // 2025
+  semester: number;      // 30
+}
+```
+
+### CourseSection Collection
+```typescript
+interface CourseSection {
+  courseCode: string;    // Reference to CourseData
+  crn: string;          // "30123"
+  subject: string;      // "CPSC"
+  course: string;       // "1030"
+  section: string;      // "001"
+  credits: string;      // "3"
+  title: string;        // "Computer Fundamentals"
+  seatsAvailable: string;
+  waitlist: string;
+  additionalFees: string;
+  repeatLimit: string;
+  notes?: string;
+  term: string;
+  year: number;
+  semester: number;
+}
+```
+
+### MeetingTime Collection
+```typescript
+interface MeetingTime {
+  sectionCRN: string;   // Reference to CourseSection
+  sectionType: string;  // "Lecture", "Lab", "Tutorial"
+  days: string;         // "MWF", "T-R"
+  time: string;         // "1030-1220"
+  room: string;         // "A275"
+  instructor: string;   // "John Smith"
+  term: string;
+  year: number;
+  semester: number;
+}
+```
 
 ## Installation & Setup 🚀
 
-1. **Install dependencies** (already installed in your project):
+1. **Clone and install dependencies**:
    ```bash
+   git clone <repository>
+   cd backend
    npm install
    ```
 
-2. **Required packages** (already in package.json):
-   - puppeteer
-   - cheerio
-   - typescript
-   - express
-   - @types/node
+2. **Environment Setup**:
+   Create a `.env` file:
+   ```env
+   MONGODB_URI=mongodb://localhost:27017/langara_courses
+   PORT=3000
+   NODE_ENV=development
+   ```
 
-## Usage 💻
+3. **Start MongoDB**:
+   ```bash
+   # Using MongoDB locally
+   mongod
 
-### Option 1: Direct Testing
-Run the test script to see the scraper in action:
+   # Or using Docker
+   docker run -d -p 27017:27017 --name mongodb mongo:latest
+   ```
+
+4. **Run the server**:
+   ```bash
+   # Development mode
+   npm run dev
+
+   # Production mode
+   npm run build
+   npm start
+   ```
+
+## API Endpoints 🔗
+
+### Course Scraping Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/scraper/subjects` | Get available subjects for a term |
+| `POST` | `/api/scraper/courses` | Scrape course data for a term |
+
+
+#### Scrape Courses
 ```bash
-npm run test-scraper
+POST /api/scraper/courses
+Content-Type: application/json
+
+{
+  "year": 2025,
+  "semester": 30
+}
 ```
 
-### Option 2: API Endpoints
-Start the server and use the REST API:
+### Course Data Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/courses` | Get all courses with pagination |
+| `GET` | `/api/courses/:courseCode` | Get specific course info |
+| `GET` | `/api/courses/:courseCode/full` | Get course with sections and meeting times |
+| `GET` | `/api/courses/:courseCode/sections` | Get sections for a course |
+| `GET` | `/api/courses/:courseCode/sections-full` | Get sections with meeting times |
+
+### Section Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/courses/sections/all` | Get all sections with filtering |
+| `GET` | `/api/courses/sections/:crn/meetings` | Get meeting times for a section |
+
+### Meeting Time Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/courses/meetings/all` | Get all meeting times with filtering |
+
+### Aggregated Data Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/courses/sections/meetings/all` | Get courses with sections and meeting times |
+
+### Metadata Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/courses/meta/subjects` | Get all available subjects |
+| `GET` | `/api/courses/meta/instructors` | Get all instructors |
+
+## Query Parameters 🔍
+
+### Common Filters
+- `year` - Academic year (e.g., 2025)
+- `semester` - Semester code (e.g., 30 for Spring)
+- `subject` - Subject code (e.g., CPSC, MATH)
+- `courseCode` - Full course code (e.g., "CPSC 1030")
+- `instructor` - Instructor name (supports partial matching)
+- `available` - Show only available sections (`true`/`false`)
+- `limit` - Results per page (default: 100)
+- `page` - Page number (default: 1)
+
+### Examples
+
 ```bash
-npm run dev
+# Get all CPSC courses for Spring 2025
+GET /api/courses?subject=CPSC&year=2025&semester=30
+
+# Get available sections taught by John Smith
+GET /api/courses/sections/all?instructor=John%20Smith&available=true
+
+# Get all meeting times for a specific instructor
+GET /api/courses/meetings/all?instructor=Johnson&year=2025&semester=30
+
+# Get complete course data with sections and meeting times
+GET /api/courses/CPSC%1181/sections-full?year=2025&semester=30
 ```
 
-Then access these endpoints:
+## Response Format 📋
 
-| Endpoint | Description | Response |
-|----------|-------------|----------|
-| `GET /scraper/langara/status` | Check scraper status | Status and available endpoints |
-| `GET /scraper/langara/scrape-main` | Scrape main Langara page | News, programs, events, notices |
-| `GET /scraper/langara/scrape-courses` | Scrape course catalog | Course listings with details |
-| `GET /scraper/langara/scrape-detailed` | Detailed scraping + metrics | Complete data + performance metrics |
-
-### Option 3: Programmatic Usage
-```typescript
-import { LangaraScraper } from './scrapers/LangaraScraper';
-
-// Quick scrape (automatically handles browser lifecycle)
-const result = await LangaraScraper.quickScrape();
-console.log('Scraped data:', result);
-
-// Manual control (for multiple operations)
-const scraper = new LangaraScraper();
-try {
-  const mainPage = await scraper.scrapeMainPage();
-  const courses = await scraper.scrapeCoursesCatalog();
-  const metrics = await scraper.getPageMetrics();
-} finally {
-  await scraper.close();
-}
-```
-
-## Data Structure 📋
-
-### Main Scraping Result
-```typescript
-interface LangaraScrapingResult {
-  timestamp: string;
-  pageInfo: LangaraPageInfo;
-  news: LangaraNews[];
-  featuredPrograms: LangaraProgram[];
-  recentCourses: LangaraCourse[];
-  notices: string[];
-  events: LangaraEvent[];
-}
-```
-
-### Course Information
-```typescript
-interface LangaraCourse {
-  courseCode: string;      // e.g., "CPSC 1150"
-  courseName: string;      // e.g., "Program Design"
-  credits: string;         // e.g., "4.0"
-  description: string;     // Course description
-  prerequisites?: string;  // Prerequisites if available
-  transferInfo?: string;   // Transfer information
-}
-```
-
-### Program Information
-```typescript
-interface LangaraProgram {
-  programName: string;     // e.g., "Computer Science Diploma"
-  programCode: string;     // Program code
-  description: string;     // Program description
-  duration: string;        // e.g., "2 years"
-  credential: string;      // e.g., "Diploma"
-}
-```
-
-## What the Scraper Shows You 👀
-
-The scraper provides insights into:
-
-1. **📰 Latest News**: Current announcements and news items
-2. **🎓 Featured Programs**: Highlighted academic programs
-3. **📚 Course Information**: Available courses with details
-4. **🗓️ Upcoming Events**: Campus events and important dates
-5. **⚠️ Important Notices**: Alerts, deadlines, and urgent information
-6. **📊 Performance Data**: Page load times and technical metrics
-7. **📸 Visual Evidence**: Screenshots of the scraped pages
-
-## Example Output 📋
-
+### Standard Response Structure
 ```json
 {
   "success": true,
-  "message": "Langara main page scraped successfully",
-  "data": {
-    "timestamp": "2025-06-26T10:30:00.000Z",
-    "pageInfo": {
-      "title": "Langara College - Vancouver, BC",
-      "url": "https://langara.ca",
-      "description": "Langara College description...",
-      "lastUpdated": "2025-06-26T10:30:00.000Z"
-    },
-    "news": [
-      {
-        "title": "Spring Registration Opens",
-        "date": "June 25, 2025",
-        "summary": "Registration for spring courses...",
-        "link": "https://langara.ca/news/..."
-      }
-    ],
-    "featuredPrograms": [...],
-    "recentCourses": [...],
-    "notices": [...],
-    "events": [...]
-  }
+  "data": [...],
+  "count": 25,
+  "pagination": {
+    "page": 1,
+    "limit": 100,
+    "total": 150,
+    "totalPages": 2
+  },
+  "filters": {
+    "year": 2025,
+    "semester": 30,
+    "subject": "CPSC"
+  },
+  "timestamp": "2025-06-30T10:30:00.000Z"
 }
+```
+
+### Course with Sections and Meeting Times
+```json
+{
+  "success": true,
+  "courseCode": "CPSC 1030",
+  "sections": [
+    {
+      "crn": "30123",
+      "section": "001",
+      "title": "Computer Fundamentals",
+      "seatsAvailable": "5",
+      "meetingTimes": [
+        {
+          "sectionType": "Lecture",
+          "days": "MWF",
+          "time": "1030-1220",
+          "room": "A275",
+          "instructor": "John Smith"
+        },
+        {
+          "sectionType": "Lab",
+          "days": "T",
+          "time": "1430-1620",
+          "room": "B019",
+          "instructor": "John Smith"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Project Structure �
+
+```
+backend/
+├── Controllers/           # Request handlers
+│   ├── CourseScraper.ts  # Course scraping logic
+│   └── BCTransferGuideController.ts
+├── Models/               # Mongoose schemas
+│   ├── CourseData.ts    # Course metadata
+│   ├── CourseSection.ts # Section details
+│   └── MeetingTime.ts   # Meeting time data
+├── Routes/              # API routes
+│   ├── Client/
+│   │   └── CourseRoutes.ts
+│   └── Scraper/
+│       ├── Courses.ts
+│       └── BCTransferGuide.ts
+├── Types/               # TypeScript interfaces
+│   └── ScraperTypes.ts
+├── Utils/               # Utility functions
+│   └── Scraper/
+│       └── ScraperUtils.ts
+├── Database/            # Database connection
+│   └── db.ts
+└── server.ts           # Express server setup
+```
+
+## Scraping Process �️
+
+The scraper works in three phases:
+
+1. **Subject Discovery**: Gets all available subjects for a term
+2. **Course Scraping**: Scrapes course data using form submission
+3. **Data Parsing**: Parses HTML and structures data into collections
+
+### Scraping Flow
+```typescript
+// 1. Get subjects
+const subjects = await getSubjects(2025, 30);
+
+// 2. Scrape courses
+const coursesHtml = await getCourses(2025, 30, subjects);
+
+// 3. Parse and structure data
+const courseData = parseCourseData(coursesHtml);
+
+// 4. Save to database (3 collections)
+await saveCourseData(courseData);
+```
+
+## Advanced Features 🎯
+
+### Multiple Meeting Times
+Handles courses with multiple components:
+- **CPSC 1030**: Lecture (MWF) + Lab (T)
+- **CHEM 1110**: Lecture (TR) + Lab (W)
+
+### Smart Instructor Filtering
+```bash
+# Find all courses taught by instructors with "Smith" in their name
+GET /api/courses/sections/meetings/all?instructor=Smith
+
+# Case-insensitive partial matching
+GET /api/courses/meetings/all?instructor=john
+```
+
+### Pagination and Performance
+- Efficient MongoDB queries with indexes
+- Pagination for large datasets
+- Aggregation pipelines for complex queries
+
+## Development 💻
+
+### Running Tests
+```bash
+npm test
+```
+
+### Database Management
+```bash
+# Drop old indexes (if schema changes)
+use langara_courses;
+db.coursedatas.dropIndexes();
+db.coursesections.dropIndexes();
+db.meetingtimes.dropIndexes();
+```
+
+### Environment Variables
+```env
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/langara_courses
 ```
 
 ## Error Handling 🛡️
 
-The scraper includes comprehensive error handling:
-- Graceful browser management
-- Timeout handling for slow page loads
-- Fallback strategies for missing elements
-- Detailed error logging
-- Automatic cleanup of resources
+The API includes comprehensive error handling:
+- **Validation errors**: Invalid parameters return 400
+- **Not found errors**: Missing resources return 404
+- **Server errors**: Internal errors return 500
+- **Database errors**: Connection issues are handled gracefully
 
-## Performance Features ⚡
+## Performance Optimization ⚡
 
-- **Headless browsing** for faster execution
-- **Smart selectors** that adapt to page changes
-- **Screenshot capture** for debugging
-- **Performance metrics** collection
-- **Memory management** with proper cleanup
+- **Indexed queries**: All commonly filtered fields are indexed
+- **Lean queries**: Uses `.lean()` for faster JSON responses
+- **Aggregation**: Complex queries use MongoDB aggregation
+- **Pagination**: Large datasets are paginated
 
-## Development Tips 💡
+## Monitoring & Logging 📊
 
-1. **Testing**: Use `npm run test-scraper` to test functionality
-2. **Debugging**: Screenshots are saved as `langara-screenshot.png`
-3. **Customization**: Modify selectors in `LangaraScraper.ts` for different data
-4. **Performance**: Monitor metrics returned by `getPageMetrics()`
-
-## Troubleshooting 🔧
-
-### Common Issues:
-1. **Browser fails to start**: Check if all dependencies are installed
-2. **Page won't load**: Check internet connection and langara.ca availability
-3. **No data extracted**: Langara.ca may have changed their HTML structure
-4. **Timeout errors**: Increase timeout values in scraper configuration
-
-### Debug Mode:
-Set `headless: false` in the Puppeteer configuration to see the browser in action:
-```typescript
-this.browser = await puppeteer.launch({
-  headless: false,  // Change this to see the browser
-  // ... other options
-});
-```
-
-## API Response Examples 📝
-
-### Status Check
-```bash
-curl http://localhost:3000/scraper/langara/status
-```
-
-### Main Page Scraping
-```bash
-curl http://localhost:3000/scraper/langara/scrape-main
-```
-
-### Course Catalog
-```bash
-curl http://localhost:3000/scraper/langara/scrape-courses
-```
-
-### Detailed Analysis
-```bash
-curl http://localhost:3000/scraper/langara/scrape-detailed
+Response includes timing and metadata:
+```json
+{
+  "success": true,
+  "data": [...],
+  "count": 25,
+  "timestamp": "2025-06-30T10:30:00.000Z",
+  "executionTime": "150ms"
+}
 ```
 
 ## Contributing 🤝
 
-Feel free to improve the scraper by:
-- Adding new data extraction features
-- Improving error handling
-- Optimizing performance
-- Adding more comprehensive testing
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
 ---
 
-**Happy Scraping! 🕷️📊**
+**Happy Course Hunting! 🎓�**
