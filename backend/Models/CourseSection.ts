@@ -1,30 +1,34 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-// Interface for TypeScript typing
 export interface ICourseSection extends Document {
+  courseCode: string; // Reference to CourseData
   crn: string;
   subject: string;
   course: string;
   section: string;
   credits: string;
   title: string;
-  type: string;
-  days: string;
-  time: string;
-  room: string;
-  instructor: string;
   seatsAvailable: string;
   waitlist: string;
   additionalFees: string;
   repeatLimit: string;
   notes?: string;
+  term: string;
+  year: number;
+  semester: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
-// CourseSection Schema
 const CourseSectionSchema: Schema = new Schema(
   {
+    courseCode: {
+      type: String,
+      required: true,
+      trim: true,
+      uppercase: true,
+      index: true,
+    },
     crn: {
       type: String,
       required: true,
@@ -59,46 +63,6 @@ const CourseSectionSchema: Schema = new Schema(
       trim: true,
       index: true,
     },
-    type: {
-      type: String,
-      required: true,
-      trim: true,
-      enum: [
-        "Lecture",
-        "Lab",
-        "Seminar",
-        "WWW",
-        "Tutorial",
-        "Studio",
-        "Clinical",
-        "Practicum",
-        "Field Study",
-        "Field School",
-        "On Site Work",
-        "Exchange-International",
-      ],
-    },
-    days: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    time: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    room: {
-      type: String,
-      optional: true,
-      trim: true,
-    },
-    instructor: {
-      type: String,
-      trim: true,
-      optional: true,
-      index: true,
-    },
     seatsAvailable: {
       type: String,
       required: true,
@@ -108,6 +72,7 @@ const CourseSectionSchema: Schema = new Schema(
       type: String,
       optional: true,
       trim: true,
+      default: "",
     },
     additionalFees: {
       type: String,
@@ -123,19 +88,57 @@ const CourseSectionSchema: Schema = new Schema(
       type: String,
       trim: true,
     },
+    term: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    year: {
+      type: Number,
+      required: true,
+      index: true,
+    },
+    semester: {
+      type: Number,
+      required: true,
+      index: true,
+    },
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
   }
 );
 
-// Export models
+// Indexes
+CourseSectionSchema.index({ courseCode: 1, term: 1 });
+CourseSectionSchema.index({ crn: 1, term: 1 }, { unique: true });
+CourseSectionSchema.index({ subject: 1, year: 1, semester: 1 });
+
+// Static methods
+CourseSectionSchema.statics.findByCourseCode = function (
+  courseCode: string,
+  year?: number,
+  semester?: number
+) {
+  const query: any = { courseCode };
+  if (year) query.year = year;
+  if (semester) query.semester = semester;
+  return this.find(query).sort({ section: 1 });
+};
+
+CourseSectionSchema.statics.findAvailable = function (
+  year?: number,
+  semester?: number
+) {
+  const query: any = { seatsAvailable: { $gt: "0" } };
+  if (year) query.year = year;
+  if (semester) query.semester = semester;
+  return this.find(query).sort({ subject: 1, courseCode: 1 });
+};
+
 export const CourseSection = mongoose.model<ICourseSection>(
   "CourseSection",
   CourseSectionSchema
 );
 
-// Export schemas for embedding
 export { CourseSectionSchema };
