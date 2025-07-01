@@ -1,6 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import { CourseData, CourseSection } from "../../Types/ScraperTypes";
+import { CourseData, CourseSection, MeetingTime } from "../../Types/ScraperTypes";
+
 
 const getSubjects = async (year: number, semester: number) => {
   const url = `https://swing.langara.bc.ca/prod/hzgkfcls.P_Sel_Crse_Search?term=${year}${semester}`;
@@ -28,12 +29,7 @@ const getSubjects = async (year: number, semester: number) => {
   }
 };
 
-const getCourses = async (
-  year: number,
-  semester: number,
-  subjects: string[]
-) => {
-  const url = "https://swing.langara.bc.ca/prod/hzgkfcls.P_GetCrse";
+const createFormData = (year: number, semester: number, subjects: string[]) => {
 
   const formData = new URLSearchParams();
 
@@ -66,6 +62,19 @@ const getCourses = async (
     formData.append("sel_subj", subject);
   });
 
+  return formData;
+
+}
+
+const getCourses = async (
+  year: number,
+  semester: number,
+  subjects: string[]
+) => {
+  const url = "https://swing.langara.bc.ca/prod/hzgkfcls.P_GetCrse";
+
+  const formData = createFormData(year, semester, subjects);
+
   try {
     const response = await axios.post(url, formData, {
       headers: {
@@ -95,6 +104,8 @@ const parseCourseData = (html: string): CourseData[] => {
 
     // Check if this is a course header row (e.g., "ABST 1100")
     const courseHeaderCell = $row.find('td[colspan="19"].dedefault b');
+
+    //If it is the header row, extract the course code
     if (courseHeaderCell.length > 0) {
       const courseCode = courseHeaderCell.text().trim();
 
@@ -136,6 +147,14 @@ const parseCourseData = (html: string): CourseData[] => {
 
       // Only add if we have essential data (CRN is a good indicator)
       if (crn && /^\d+$/.test(crn)) {
+        const meetingTime: MeetingTime = {
+          SectionType: type,
+          Days: days,
+          Time: time,
+          Room: room,
+          Instructor: instructor,
+        };
+
         const courseSection: CourseSection = {
           crn,
           subject,
@@ -143,11 +162,7 @@ const parseCourseData = (html: string): CourseData[] => {
           section,
           credits,
           title,
-          type,
-          days,
-          time,
-          room,
-          instructor,
+          data: [meetingTime], // Initialize with first meeting time
           seatsAvailable: seatsAvail,
           waitlist,
           additionalFees,
@@ -156,9 +171,32 @@ const parseCourseData = (html: string): CourseData[] => {
 
         currentCourse.sections.push(courseSection);
       }
+      // Check for additional meeting times for the same section
+      else if (!crn && currentCourse.sections.length > 0) {
+        const additionalType = $(cells[12]).text().trim();
+        const additionalDays = $(cells[13]).text().trim();
+        const additionalTime = $(cells[14]).text().trim();
+        const additionalRoom = $(cells[17]).text().trim();
+        const additionalInstructor = $(cells[18]).text().trim();
+
+        // Check if this row has meeting time data
+        if (additionalType && (additionalDays || additionalTime || additionalRoom)) {
+          const lastSection = currentCourse.sections[currentCourse.sections.length - 1];
+
+          const additionalMeetingTime: MeetingTime = {
+            SectionType: additionalType,
+            Days: additionalDays,
+            Time: additionalTime,
+            Room: additionalRoom,
+            Instructor: additionalInstructor,
+          };
+
+          lastSection.data.push(additionalMeetingTime);
+        }
+      }
     }
 
-    // Check for notes row (usually spans multiple columns)
+    // Check for notes row, it is 6 cols 
     const notesCell = $row.find('td[colspan="6"] em');
     if (
       notesCell.length > 0 &&
