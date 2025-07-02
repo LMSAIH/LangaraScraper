@@ -38,6 +38,7 @@ const MeetingTimeSchema = new Schema(
         "Field School",
         "On Site Work",
         "Exchange-International",
+        "Exam"
       ],
     },
     days: {
