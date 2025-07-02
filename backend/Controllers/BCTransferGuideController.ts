@@ -104,7 +104,7 @@ const getTransfersForSubject = async(institution: BCInstitution,subject: BCTrans
     const pagesTotal = firstResponse.data.totalPages;
 
     for (let i = 1; i <= pagesTotal; i++){
-      //Save the transfer data
+      //Save the transfer data / fetch it
       
     }
 
