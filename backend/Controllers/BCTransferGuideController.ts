@@ -47,20 +47,69 @@ const getInstitutionInfo = async(InstitutionTitle: string): Promise<BCInstitutio
   }
 }
 
-const getTransfersForInstitution = async(institutionTitle: string, subjectCode: string, subjectId: number ) => {
-
-  const institution = await getInstitutionInfo(institutionTitle);
-  let page = 1;//Uses 1 for the first page so we can grab the max amount
-  const headers = {
-    "institutionCode": institution.Id,
-    "isMember": true,
-    "isPublic": null,
-    "pageNumber": page,
-    "sender": institution.Code,
-    "subjectCode": subjectCode,
-    "subjectId": subjectId,
-    "year": 2025 //I have no clue why the need the year as it shows past transfers
+const fetchNonce = async(): Promise<string> => {
+  const fetchURL = `https://www.bctransferguide.ca/transfer-options/search-courses/`
+  
+  const response = await axios.get(fetchURL);
+  const nonceMatch = response.data.match(/id="c2c-search-filters" nonce="([^"]+)"/);
+  if (!nonceMatch) {
+    throw new Error("Nonce not found");
   }
+  return nonceMatch[1];
 }
 
-export { getBCTransferSubjectIDs };
+const getTransfersForInstitution = async(institutionTitle: string) => {
+  try{
+    const institution = await getInstitutionInfo(institutionTitle);
+    const subjects = await getBCTransferSubjectIDs(institution.Id);
+
+    const wpnonce = await fetchNonce();
+
+    subjects.forEach((subject: BCTransferSubject) => {
+      getTransfersForSubject(institution, subject, wpnonce);
+      //Do something with the transfer data for each subject or smth
+
+    });
+  } catch(error){
+    console.error("Error fetching transfers:", error);
+    throw error;
+  }
+  
+}
+
+const getTransfersForSubject = async(institution: BCInstitution,subject: BCTransferSubject, wpnonce: string) => {
+  try{
+    const fetchTransferURL = `https://www.bctransferguide.ca/wp-json/bctg-search/course-to-course/search-from?_wpnonce=${wpnonce}`
+    
+    let page = 1;//Uses 1 for the first page so we can grab the max amount
+    const requestData = {
+      sender: institution.Id,
+      institutionCode: institution.Code,
+      subjectId: subject.Id,
+      subjectCode: subject.Code,//"MATH" "CPSC"
+      year: 2025,
+      pageNumber: page,
+      isMember: true,//Every institution in BC is a member, iF we want to do cross-provincial this will need to be changed
+      isPublic: null//Not every institution is public but I guess the api doesn't care???
+    };
+
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    };
+
+    const firstResponse = await axios.post(fetchTransferURL, requestData, config)
+    const pagesTotal = firstResponse.data.totalPages;
+
+    for (let i = 1; i <= pagesTotal; i++){
+      //Save the transfer data
+      
+    }
+
+  } catch(error){
+
+  }
+}
+export { getTransfersForInstitution };
