@@ -4,6 +4,11 @@ export interface BCTransferSubject {
   Title: string;
 }
 
+export interface BCInstitution {
+  Code: string,
+  Id: number
+}
+
 export interface MeetingTime {
   SectionType: string;
   Days: string;
