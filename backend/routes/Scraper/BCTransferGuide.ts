@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { getBCTransferSubjectIDs } from "../../Controllers/BCTransferGuideController";
+import { getTransfersForInstitution } from "../../Controllers/BCTransferGuideController";
 
 const router = Router();
 
@@ -16,7 +16,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
 
     console.log(typeof institutionID, institutionID);
 
-    const subjects = await getBCTransferSubjectIDs(institutionID);
+    const subjects = await getTransfersForInstitution(institutionID);
     console.log(subjects);
 
     res.json(subjects);

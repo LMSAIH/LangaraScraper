@@ -2,12 +2,33 @@ export interface BCTransferSubject {
   Id: number;
   Code: string;
   Title: string;
+  CourseList: BCTransferCourse[]
 }
 
 export interface BCInstitution {
   Code: string,
   Id: number
+  SubjectList: BCTransferSubject[]
 }
+export interface BCTransferAgreement{
+  BCTransferCourseID: number,
+  RecevingInstituion: BCInstitution,
+  ReceivingSubject: BCTransferSubject,
+  ReceivingCredits: number,
+  SendingCredits: number,
+  StartDate: number,
+  EndDate: number
+}
+
+export interface BCTransferCourse{
+  Id: number,
+  Title: string,
+  Credits: number,
+  Subject: BCTransferSubject,
+  ParentInstitution: BCInstitution
+  Agreements: BCTransferAgreement[]
+}
+
 
 export interface MeetingTime {
   SectionType: string;

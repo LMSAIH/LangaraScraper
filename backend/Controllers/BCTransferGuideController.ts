@@ -1,5 +1,5 @@
 import axios from "axios";
-import { BCInstitution, BCTransferSubject } from "../Types/ScraperTypes";
+import { BCInstitution, BCTransferSubject, BCTransferAgreement, BCTransferCourse } from "../Types/ScraperTypes";
 
 const getBCTransferSubjectIDs = async (institutionID: number) => {
   const getSubjectsURL = `https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetSubjects?institutionID=${institutionID}&sending=true`;
@@ -40,6 +40,7 @@ const getInstitutionInfo = async(InstitutionTitle: string): Promise<BCInstitutio
     return {//Clean up so we only store necessary information
       Id: rawInstitution.Id,
       Code: rawInstitution.Code,
+      SubjectList: []
     };
   } catch (error) {
     console.error("Error fetching institution info:", error);
@@ -81,7 +82,7 @@ const getTransfersForSubject = async(institution: BCInstitution,subject: BCTrans
   try{
     const fetchTransferURL = `https://www.bctransferguide.ca/wp-json/bctg-search/course-to-course/search-from?_wpnonce=${wpnonce}`
     
-    let page = 1;//Uses 1 for the first page so we can grab the max amount
+    let page: number = 1;//Uses 1 for the first page so we can grab the max amount
     const requestData = {
       sender: institution.Id,
       institutionCode: institution.Code,
@@ -103,12 +104,50 @@ const getTransfersForSubject = async(institution: BCInstitution,subject: BCTrans
     const firstResponse = await axios.post(fetchTransferURL, requestData, config)
     const pagesTotal = firstResponse.data.totalPages;
 
-    for (let i = 1; i <= pagesTotal; i++){
+
+    for (page = 1; page <= pagesTotal; page++){
       //Save the transfer data / fetch it
+      let response = await axios.post(fetchTransferURL,requestData, config)
       
     }
 
   } catch(error){
+
+  }
+}
+
+const getTransfersForCourse = async(courseNumber: number, subjectCode: string, subjectId: number, institutionCode: string,institutionId: number, wpnonce: string){
+  try{
+    const fetchTransferURL = `https://www.bctransferguide.ca/wp-json/bctg-search/course-to-course/search-from?_wpnonce=${wpnonce}`
+    let page: number = 1;//Uses 1 for the first page so we can grab the max amount
+    const requestData = {
+      courseNumber: courseNumber,
+      institutionCode: institutionCode,
+      isMember: true,//Every institution in BC is a member, iF we want to do cross-provincial this will need to be changed
+      isPublic: null,//Not every institution is public but I guess the api doesn't care???
+      pageNumber: page,
+      sender: institutionId,
+      subjectCode: subjectCode,//"MATH" "CPSC"
+      subjectId: subjectId, //Unique for BCTransfer, CPSC = 531
+      year: 2025
+    };
+
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    };
+    const firstResponse = await axios.post(fetchTransferURL, requestData, config)
+    const pagesTotal = firstResponse.data.totalPages;
+
+    if (firstResponse === pagesTotal){
+      return firstResponse.data.courses[0].agreements;
+    } else{
+      //Have to scan through multiple pages
+    }
+
+  } catch (error){
 
   }
 }
