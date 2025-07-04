@@ -13,100 +13,6 @@ const fetchNonce = async(): Promise<string> => {
   return nonceMatch[1];
 }
 
-const getTransfersForCourse = async(courseNumber: number, subjectCode: string, institutionCode: string): Promise<BCTransferAgreement[]> =>{
-  
-  const wpnonce = await fetchNonce();
-  try{
-      
-    try{//Fetch institute info
-        const getInstituionsURL = 'https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetFromInstitutions?countryId=40&internalOnly=true'
-
-        const response = await axios.get(getInstituionsURL);
-        const rawInstitution = response.data.find((inst: any) => inst.Code === institutionCode);
-        if (!rawInstitution) {
-          throw new Error(`Institution by '"${institutionCode}"' not found`);
-        }
-        var institutionID = rawInstitution.Id; // Langara = 15, UBC = 27, SFU = 24
-
-    }catch(error){
-      console.log("Error fetching course's institution ",error);
-      throw error;
-    }
-
-    try{//Fetch subject info
-      const getSubjectsURL = `https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetSubjects?institutionID=${institutionID}&sending=true`;
-      const subjectsListResponse = await axios.get(getSubjectsURL)
-      const subject = subjectsListResponse.data.find((subj: any) => subj.Code === subjectCode);
-      if (!subject) {
-        throw new Error(`Subject code '${subjectCode}' not found`);
-      }
-      var subjectId = subject.Id;
-    } catch(error){
-        console.log("Error fetching course's subject ",error);
-        throw error;
-    }
-    try{
-      const fetchTransferURL = `https://www.bctransferguide.ca/wp-json/bctg-search/course-to-course/search-from?_wpnonce=${wpnonce}`
-      let page: number = 1;//Uses 1 for the first page so we can grab the max amount
-      const requestData = {
-      courseNumber: courseNumber,
-      institutionCode: institutionCode,
-      isMember: true,//Every institution in BC is a member, iF we want to do cross-provincial this will need to be changed
-      isPublic: null,//Not every institution is public but I guess the api doesn't care???
-      pageNumber: page,
-      sender: institutionID,
-      subjectCode: subjectCode,//"MATH" "CPSC"
-      subjectId: subjectId, //Unique for BCTransfer, CPSC = 531
-      year: 2025 //Can change for it to get autoset
-      }; 
-      const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-      };
-      const firstResponse = await axios.post(fetchTransferURL, requestData, config)
-      if (!firstResponse){
-        throw new Error(`Transfer Data for: '${subjectCode} ${courseNumber}' not found`);
-      }
-
-      const pagesTotal = firstResponse.data.totalPages;
-      var agreementsList: BCTransferAgreement[] = [];
-      
-      // Always process first page (already fetched)
-      for (const agreement of firstResponse.data.courses[0].agreements) {
-        processAgreement(agreement, courseNumber, subjectCode, institutionCode, agreementsList);
-      }
-
-      // If there are multiple pages, fetch and process remaining pages
-      if (pagesTotal > 1) {
-        for (let currentPage = 2; currentPage <= pagesTotal; currentPage++) {
-          const pageRequestData = {
-            ...requestData,
-            pageNumber: currentPage
-          };
-
-          const pageResponse = await axios.post(fetchTransferURL, pageRequestData, config);
-          
-          if (pageResponse && pageResponse.data.courses && pageResponse.data.courses[0]) {
-            for (const agreement of pageResponse.data.courses[0].agreements) {
-              processAgreement(agreement, courseNumber, subjectCode, institutionCode, agreementsList);
-            }
-          }
-        }
-      }
-      return agreementsList;
-    }catch(error){
-      console.log("Error fetching course-to-course info ",error);
-      throw error;
-    }
-  } catch (error){
-    console.log("Error fetching transfer agreements ",error);
-    throw error;
-  }
-  return agreementsList as BCTransferAgreement[];
-}
-
 // Helper function to process individual agreements
 const processAgreement = (agreement: any, courseNumber: number, subjectCode: string, institutionCode: string, agreementsList: BCTransferAgreement[]) => {
   let agreementDetails: string = agreement.Detail;
@@ -225,5 +131,98 @@ const processAgreement = (agreement: any, courseNumber: number, subjectCode: str
     }
   }
 };
+
+const getTransfersForCourse = async(courseNumber: number, subjectCode: string, institutionCode: string): Promise<BCTransferAgreement[]> =>{
+  
+  const wpnonce = await fetchNonce();
+  try{
+      
+    try{//Fetch institute info
+        const getInstituionsURL = 'https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetFromInstitutions?countryId=40&internalOnly=true'
+
+        const response = await axios.get(getInstituionsURL);
+        const rawInstitution = response.data.find((inst: any) => inst.Code === institutionCode);
+        if (!rawInstitution) {
+          throw new Error(`Institution by '"${institutionCode}"' not found`);
+        }
+        var institutionID = rawInstitution.Id; // Langara = 15, UBC = 27, SFU = 24
+
+    }catch(error){
+      console.log("Error fetching course's institution ",error);
+      throw error;
+    }
+
+    try{//Fetch subject info
+      const getSubjectsURL = `https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetSubjects?institutionID=${institutionID}&sending=true`;
+      const subjectsListResponse = await axios.get(getSubjectsURL)
+      const subject = subjectsListResponse.data.find((subj: any) => subj.Code === subjectCode);
+      if (!subject) {
+        throw new Error(`Subject code '${subjectCode}' not found`);
+      }
+      var subjectId = subject.Id;
+    } catch(error){
+        console.log("Error fetching course's subject ",error);
+        throw error;
+    }
+    try{
+      const fetchTransferURL = `https://www.bctransferguide.ca/wp-json/bctg-search/course-to-course/search-from?_wpnonce=${wpnonce}`
+      let page: number = 1;//Uses 1 for the first page so we can grab the max amount
+      const requestData = {
+      courseNumber: courseNumber,
+      institutionCode: institutionCode,
+      isMember: true,//Every institution in BC is a member, iF we want to do cross-provincial this will need to be changed
+      isPublic: null,//Not every institution is public but I guess the api doesn't care???
+      pageNumber: page,
+      sender: institutionID,
+      subjectCode: subjectCode,//"MATH" "CPSC"
+      subjectId: subjectId, //Unique for BCTransfer, CPSC = 531
+      year: 2025 //Can change for it to get autoset
+      }; 
+      const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+      };
+      const firstResponse = await axios.post(fetchTransferURL, requestData, config)
+      if (!firstResponse){
+        throw new Error(`Transfer Data for: '${subjectCode} ${courseNumber}' not found`);
+      }
+
+      const pagesTotal = firstResponse.data.totalPages;
+      var agreementsList: BCTransferAgreement[] = [];
+      
+      // Always process first page (already fetched)
+      for (const agreement of firstResponse.data.courses[0].agreements) {
+        processAgreement(agreement, courseNumber, subjectCode, institutionCode, agreementsList);
+      }
+
+      // If there are multiple pages, fetch and process remaining pages
+      if (pagesTotal > 1) {
+        for (let currentPage = 2; currentPage <= pagesTotal; currentPage++) {
+          const pageRequestData = {
+            ...requestData,
+            pageNumber: currentPage
+          };
+
+          const pageResponse = await axios.post(fetchTransferURL, pageRequestData, config);
+          
+          if (pageResponse && pageResponse.data.courses && pageResponse.data.courses[0]) {
+            for (const agreement of pageResponse.data.courses[0].agreements) {
+              processAgreement(agreement, courseNumber, subjectCode, institutionCode, agreementsList);
+            }
+          }
+        }
+      }
+      return agreementsList as BCTransferAgreement[];
+    }catch(error){
+      console.log("Error fetching course-to-course info ",error);
+      throw error;
+    }
+  } catch (error){
+    console.log("Error fetching transfer agreements ",error);
+    throw error;
+  }
+}
 
 export { getTransfersForCourse };
