@@ -56,7 +56,7 @@ const handleGetCourses = async (req: Request, res: Response): Promise<void> => {
 
     // Save to database if requested
     if (saveToDb) {
-      handleSaveToDB(Number(year), Number(semester), courseData)
+      handleSaveToDB(Number(year), Number(semester), courseData);
     }
 
     // Calculate totals for response
@@ -65,10 +65,12 @@ const handleGetCourses = async (req: Request, res: Response): Promise<void> => {
       0
     );
     const totalMeetingTimes = courseData.reduce(
-      (sum, course) => sum + course.sections.reduce(
-        (sectionSum, section) => sectionSum + section.data.length,
-        0
-      ),
+      (sum, course) =>
+        sum +
+        course.sections.reduce(
+          (sectionSum, section) => sectionSum + section.data.length,
+          0
+        ),
       0
     );
 
@@ -98,89 +100,110 @@ const handleGetCourses = async (req: Request, res: Response): Promise<void> => {
 
 //This is a helper function for handleGetCourses that autopopulates the database with the scraped course data.
 //The old data is removed before inserting the new data to avoid duplicates.
-const handleSaveToDB = async (year: number, semester: number, data: CourseData[]) => {
+const handleSaveToDB = async (
+  year: number,
+  semester: number,
+  data: CourseData[]
+) => {
   const session = await mongoose.startSession();
 
-      try {
-        await session.withTransaction(async () => {
-          const term = `${year}${semester}`;
-          
-          // Delete old data for the specified year and semester
-          const [courseDeleteResult, sectionDeleteResult, meetingDeleteResult] = await Promise.all([
-            DBCourseData.deleteMany({ year: Number(year), semester: Number(semester) }),
-            CourseSection.deleteMany({ year: Number(year), semester: Number(semester) }),
-            MeetingTime.deleteMany({ year: Number(year), semester: Number(semester) })
-          ]);
+  try {
+    await session.withTransaction(async () => {
+      const term = `${year}${semester}`;
 
-          // Prepare data for insertion
-          const coursesToInsert = [];
-          const sectionsToInsert = [];
-          const meetingTimesToInsert = [];
+      // Delete old data for the specified year and semester
+      const [courseDeleteResult, sectionDeleteResult, meetingDeleteResult] =
+        await Promise.all([
+          DBCourseData.deleteMany({
+            year: Number(year),
+            semester: Number(semester),
+          }),
+          CourseSection.deleteMany({
+            year: Number(year),
+            semester: Number(semester),
+          }),
+          MeetingTime.deleteMany({
+            year: Number(year),
+            semester: Number(semester),
+          }),
+        ]);
 
-          for (const course of data) {
-            // Add course data
-            coursesToInsert.push({
-              courseCode: course.courseCode,
-              subject: course.subject,
+      // Prepare data for insertion
+      const coursesToInsert = [];
+      const sectionsToInsert = [];
+      const meetingTimesToInsert = [];
+
+      for (const course of data) {
+        // Add course data
+        coursesToInsert.push({
+          courseCode: course.courseCode,
+          subject: course.subject,
+          term,
+          year: Number(year),
+          semester: Number(semester),
+        });
+
+        // Add sections and meeting times
+        for (const section of course.sections) {
+          sectionsToInsert.push({
+            courseCode: course.courseCode,
+            crn: section.crn,
+            subject: section.subject,
+            course: section.course,
+            section: section.section,
+            credits: section.credits,
+            title: section.title,
+            seatsAvailable: section.seatsAvailable,
+            waitlist: section.waitlist,
+            additionalFees: section.additionalFees,
+            repeatLimit: section.repeatLimit,
+            notes: section.notes,
+            term,
+            year: Number(year),
+            semester: Number(semester),
+          });
+
+          // Add meeting times for this section
+          for (const meetingTime of section.data) {
+            meetingTimesToInsert.push({
+              sectionCRN: section.crn,
+              sectionType: meetingTime.SectionType,
+              days: meetingTime.Days,
+              time: meetingTime.Time,
+              room: meetingTime.Room,
+              instructor: meetingTime.Instructor,
               term,
               year: Number(year),
               semester: Number(semester),
             });
-
-            // Add sections and meeting times
-            for (const section of course.sections) {
-              sectionsToInsert.push({
-                courseCode: course.courseCode,
-                crn: section.crn,
-                subject: section.subject,
-                course: section.course,
-                section: section.section,
-                credits: section.credits,
-                title: section.title,
-                seatsAvailable: section.seatsAvailable,
-                waitlist: section.waitlist,
-                additionalFees: section.additionalFees,
-                repeatLimit: section.repeatLimit,
-                notes: section.notes,
-                term,
-                year: Number(year),
-                semester: Number(semester),
-              });
-
-              // Add meeting times for this section
-              for (const meetingTime of section.data) {
-                meetingTimesToInsert.push({
-                  sectionCRN: section.crn,
-                  sectionType: meetingTime.SectionType,
-                  days: meetingTime.Days,
-                  time: meetingTime.Time,
-                  room: meetingTime.Room,
-                  instructor: meetingTime.Instructor,
-                  term,
-                  year: Number(year),
-                  semester: Number(semester),
-                });
-              }
-            }
           }
-
-          // Insert new data in parallel
-          const [courseInsertResult, sectionInsertResult, meetingInsertResult] = await Promise.all([
-            coursesToInsert.length > 0 ? DBCourseData.insertMany(coursesToInsert) : [],
-            sectionsToInsert.length > 0 ? CourseSection.insertMany(sectionsToInsert) : [],
-            meetingTimesToInsert.length > 0 ? MeetingTime.insertMany(meetingTimesToInsert) : []
-          ]);
-
-          console.log(
-            `Deleted: ${courseDeleteResult.deletedCount} courses, ${sectionDeleteResult.deletedCount} sections, ${meetingDeleteResult.deletedCount} meeting times`
-          );
-          console.log(
-            `Inserted: ${courseInsertResult.length} courses, ${sectionInsertResult.length} sections, ${meetingInsertResult.length} meeting times`
-          );
-        });
-      } finally {
-        session.endSession();
+        }
       }
-}
+
+      // Insert new data in parallel
+      const [courseInsertResult, sectionInsertResult, meetingInsertResult] =
+        await Promise.all([
+          coursesToInsert.length > 0
+            ? DBCourseData.insertMany(coursesToInsert)
+            : [],
+          sectionsToInsert.length > 0
+            ? CourseSection.insertMany(sectionsToInsert)
+            : [],
+          meetingTimesToInsert.length > 0
+            ? MeetingTime.insertMany(meetingTimesToInsert)
+            : [],
+        ]);
+
+      console.log(
+        `Deleted: ${courseDeleteResult.deletedCount} courses, ${sectionDeleteResult.deletedCount} sections, ${meetingDeleteResult.deletedCount} meeting times`
+      );
+      console.log(
+        `Inserted: ${courseInsertResult.length} courses, ${sectionInsertResult.length} sections, ${meetingInsertResult.length} meeting times`
+      );
+    });
+  } finally {
+    session.endSession();
+  }
+};
 
 export { handleGetSubjects, handleGetCourses };
