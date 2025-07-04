@@ -169,6 +169,175 @@ const handleGetAggregatedSectionsAndMeetingsByCourseCode = async (
   }
 };
 
+// ...existing code...
+
+const handleGetAggregatedSectionsAndMeetings = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const {
+      year,
+      semester,
+      subject,
+      instructor,
+      available,
+      limit = 100,
+      page = 1,
+    } = req.query;
+
+    if (!year || !semester) {
+      res.status(400).json({
+        success: false,
+        error: "Year and semester are required",
+      });
+      return;
+    }
+
+    // Pagination
+    const limitNum = Number(limit);
+    const skip = (Number(page) - 1) * limitNum;
+
+    let sections;
+    let totalCount;
+
+    // Build base section query
+    const baseSectionQuery: any = {};
+    if (year) baseSectionQuery.year = Number(year);
+    if (semester) baseSectionQuery.semester = Number(semester);
+    if (subject) baseSectionQuery.subject = String(subject).toUpperCase();
+    if (available === "true") baseSectionQuery.seatsAvailable = { $gt: "0" };
+
+    if (instructor) {
+      // Get meeting times that match the instructor
+      const meetingQuery: any = {
+        instructor: new RegExp(String(instructor), "i"),
+      };
+      if (year) meetingQuery.year = Number(year);
+      if (semester) meetingQuery.semester = Number(semester);
+
+      // Get CRNs that have this instructor
+      const instructorCRNs = await MeetingTime.find(meetingQuery).distinct(
+        "sectionCRN"
+      );
+
+      if (instructorCRNs.length === 0) {
+        res.json({
+          success: true,
+          sections: [],
+          count: 0,
+          pagination: {
+            page: Number(page),
+            limit: limitNum,
+            total: 0,
+            totalPages: 0,
+          },
+          filters: {
+            year: year ? Number(year) : undefined,
+            semester: semester ? Number(semester) : undefined,
+            subject: subject ? String(subject).toUpperCase() : undefined,
+            instructor: instructor ? String(instructor) : undefined,
+            available: available === "true" ? true : undefined,
+          },
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Add CRN filter to section query
+      baseSectionQuery.crn = { $in: instructorCRNs };
+    }
+
+    // Get total count for pagination
+    totalCount = await CourseSection.countDocuments(baseSectionQuery);
+
+    // Get sections with pagination
+    sections = await CourseSection.find(baseSectionQuery)
+      .limit(limitNum)
+      .skip(skip)
+      .sort({ subject: 1, courseCode: 1, section: 1 })
+      .lean();
+
+    if (sections.length === 0) {
+      res.json({
+        success: true,
+        sections: [],
+        count: 0,
+        pagination: {
+          page: Number(page),
+          limit: limitNum,
+          total: totalCount,
+          totalPages: 0,
+        },
+        filters: {
+          year: year ? Number(year) : undefined,
+          semester: semester ? Number(semester) : undefined,
+          subject: subject ? String(subject).toUpperCase() : undefined,
+          instructor: instructor ? String(instructor) : undefined,
+          available: available === "true" ? true : undefined,
+        },
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+
+    // Get all CRNs for meeting times
+    const crns = sections.map((section) => section.crn);
+
+    // Get meeting times for all sections
+    const meetingTimesQuery: any = { sectionCRN: { $in: crns } };
+    if (year) meetingTimesQuery.year = Number(year);
+    if (semester) meetingTimesQuery.semester = Number(semester);
+    if (instructor)
+      meetingTimesQuery.instructor = new RegExp(String(instructor), "i");
+
+    const meetingTimes = await MeetingTime.find(meetingTimesQuery)
+      .sort({ sectionCRN: 1, sectionType: 1 })
+      .lean();
+
+    // Group meeting times by CRN
+    const meetingTimesByCRN = meetingTimes.reduce((acc, meeting) => {
+      if (!acc[meeting.sectionCRN]) {
+        acc[meeting.sectionCRN] = [];
+      }
+      acc[meeting.sectionCRN].push(meeting);
+      return acc;
+    }, {} as any);
+
+    // Combine sections with their meeting times
+    const sectionsWithMeetings = sections.map((section) => ({
+      ...section,
+      meetingTimes: meetingTimesByCRN[section.crn] || [],
+    }));
+
+    res.json({
+      success: true,
+      sections: sectionsWithMeetings,
+      count: sectionsWithMeetings.length,
+      pagination: {
+        page: Number(page),
+        limit: limitNum,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limitNum),
+      },
+      filters: {
+        year: year ? Number(year) : undefined,
+        semester: semester ? Number(semester) : undefined,
+        subject: subject ? String(subject).toUpperCase() : undefined,
+        instructor: instructor ? String(instructor) : undefined,
+        available: available === "true" ? true : undefined,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error fetching sections with meeting times:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
 const handleGetAggregatedCourseDataSectionAndMeetings = async (
   req: Request,
   res: Response
@@ -382,5 +551,6 @@ const handleGetAggregatedCourseDataSectionAndMeetings = async (
 export {
   handleGetAggregatedCourseDataByCourseCode,
   handleGetAggregatedSectionsAndMeetingsByCourseCode,
+  handleGetAggregatedSectionsAndMeetings,
   handleGetAggregatedCourseDataSectionAndMeetings,
 };
