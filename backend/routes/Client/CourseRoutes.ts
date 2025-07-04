@@ -15,6 +15,7 @@ import {
   handleGetAggregatedCourseDataByCourseCode,
   handleGetAggregatedCourseDataSectionAndMeetings,
   handleGetAggregatedSectionsAndMeetingsByCourseCode,
+  handleGetAggregatedSectionsAndMeetings
 } from "../../Controllers/Client/Aggregated";
 import {
   handleGetMetaCourses,
@@ -54,5 +55,8 @@ router.get("/meta/instructors", handleGetMetaInstructors);
 
 // Get all courses with sections and meeting times
 router.get("/sections/meetings/all", handleGetAggregatedCourseDataSectionAndMeetings);
+
+// Get sections and meetings without course data (better performance)
+router.get("/sections/meetings/", handleGetAggregatedSectionsAndMeetings)
 
 export { router };
