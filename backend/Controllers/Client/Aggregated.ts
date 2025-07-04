@@ -169,8 +169,6 @@ const handleGetAggregatedSectionsAndMeetingsByCourseCode = async (
   }
 };
 
-// ...existing code...
-
 const handleGetAggregatedSectionsAndMeetings = async (
   req: Request,
   res: Response
@@ -180,6 +178,7 @@ const handleGetAggregatedSectionsAndMeetings = async (
       year,
       semester,
       subject,
+      courseCode,
       instructor,
       available,
       limit = 100,
@@ -206,6 +205,7 @@ const handleGetAggregatedSectionsAndMeetings = async (
     if (year) baseSectionQuery.year = Number(year);
     if (semester) baseSectionQuery.semester = Number(semester);
     if (subject) baseSectionQuery.subject = String(subject).toUpperCase();
+    if (courseCode) baseSectionQuery.courseCode = new RegExp(String(courseCode), "i");
     if (available === "true") baseSectionQuery.seatsAvailable = { $gt: "0" };
 
     if (instructor) {
@@ -236,6 +236,7 @@ const handleGetAggregatedSectionsAndMeetings = async (
             year: year ? Number(year) : undefined,
             semester: semester ? Number(semester) : undefined,
             subject: subject ? String(subject).toUpperCase() : undefined,
+            courseCode: courseCode ? String(courseCode) : undefined,
             instructor: instructor ? String(instructor) : undefined,
             available: available === "true" ? true : undefined,
           },
@@ -273,6 +274,7 @@ const handleGetAggregatedSectionsAndMeetings = async (
           year: year ? Number(year) : undefined,
           semester: semester ? Number(semester) : undefined,
           subject: subject ? String(subject).toUpperCase() : undefined,
+          courseCode: courseCode ? String(courseCode) : undefined,
           instructor: instructor ? String(instructor) : undefined,
           available: available === "true" ? true : undefined,
         },
@@ -324,6 +326,7 @@ const handleGetAggregatedSectionsAndMeetings = async (
         year: year ? Number(year) : undefined,
         semester: semester ? Number(semester) : undefined,
         subject: subject ? String(subject).toUpperCase() : undefined,
+        courseCode: courseCode ? String(courseCode) : undefined,
         instructor: instructor ? String(instructor) : undefined,
         available: available === "true" ? true : undefined,
       },
