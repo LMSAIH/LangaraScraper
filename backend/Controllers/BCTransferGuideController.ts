@@ -1,53 +1,7 @@
 import axios from "axios";
-import { BCInstitution, BCTransferSubject, BCTransferAgreement, BCTransferCourse } from "../Types/ScraperTypes";
+import { BCTransferAgreement, BCTransferSingleAgreement, BCTransferBundleAgreement} from "../Types/ScraperTypes";
 
-const getBCTransferSubjectIDs = async (institutionID: number) => {
-  const getSubjectsURL = `https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetSubjects?institutionID=${institutionID}&sending=true`;
-
-  try {
-
-    const response = await axios.get(getSubjectsURL);
-
-    response.data.forEach((subject: BCTransferSubject) => {
-      console.log(subject.Id + ", " + subject.Code + ", " + subject.Title);
-    });
-    
-    return response.data.map((subject: BCTransferSubject) => ({
-      id: subject.Id,
-      code: subject.Code,
-      title: subject.Title
-    }));
-
-  } catch (error) {
-    console.error("Error fetching subjects:", error);
-    throw error;
-  }
-}
-
-const getInstitutionInfo = async(InstitutionTitle: string): Promise<BCInstitution> => {
-  const getInstituionsUrl = 'https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetFromInstitutions?countryId=40&internalOnly=true'
-  
-  try{
-
-     const response = await axios.get(getInstituionsUrl);
-
-    const rawInstitution = response.data.find((inst: any) => inst.Title === InstitutionTitle);
-    
-    if (!rawInstitution) {
-      throw new Error(`Institution "${InstitutionTitle}" not found`);
-    }
-
-    return {//Clean up so we only store necessary information
-      Id: rawInstitution.Id,
-      Code: rawInstitution.Code,
-      SubjectList: []
-    };
-  } catch (error) {
-    console.error("Error fetching institution info:", error);
-    throw error;
-  }
-}
-
+//Needs redis implementation, Note this can throw an error so it should be put into redis ASAP
 const fetchNonce = async(): Promise<string> => {
   const fetchURL = `https://www.bctransferguide.ca/transfer-options/search-courses/`
   
@@ -59,96 +13,217 @@ const fetchNonce = async(): Promise<string> => {
   return nonceMatch[1];
 }
 
-const getTransfersForInstitution = async(institutionTitle: string) => {
-  try{
-    const institution = await getInstitutionInfo(institutionTitle);
-    const subjects = await getBCTransferSubjectIDs(institution.Id);
-
-    const wpnonce = await fetchNonce();
-
-    subjects.forEach((subject: BCTransferSubject) => {
-      getTransfersForSubject(institution, subject, wpnonce);
-      //Do something with the transfer data for each subject or smth
-
-    });
-  } catch(error){
-    console.error("Error fetching transfers:", error);
-    throw error;
-  }
+const getTransfersForCourse = async(courseNumber: number, subjectCode: string, institutionCode: string): Promise<BCTransferAgreement[]> =>{
   
-}
-
-const getTransfersForSubject = async(institution: BCInstitution,subject: BCTransferSubject, wpnonce: string) => {
+  const wpnonce = await fetchNonce();
   try{
-    const fetchTransferURL = `https://www.bctransferguide.ca/wp-json/bctg-search/course-to-course/search-from?_wpnonce=${wpnonce}`
-    
-    let page: number = 1;//Uses 1 for the first page so we can grab the max amount
-    const requestData = {
-      sender: institution.Id,
-      institutionCode: institution.Code,
-      subjectId: subject.Id,
-      subjectCode: subject.Code,//"MATH" "CPSC"
-      year: 2025,
-      pageNumber: page,
-      isMember: true,//Every institution in BC is a member, iF we want to do cross-provincial this will need to be changed
-      isPublic: null//Not every institution is public but I guess the api doesn't care???
-    };
-
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    };
-
-    const firstResponse = await axios.post(fetchTransferURL, requestData, config)
-    const pagesTotal = firstResponse.data.totalPages;
-
-
-    for (page = 1; page <= pagesTotal; page++){
-      //Save the transfer data / fetch it
-      let response = await axios.post(fetchTransferURL,requestData, config)
       
+    try{//Fetch institute info
+        const getInstituionsURL = 'https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetFromInstitutions?countryId=40&internalOnly=true'
+
+        const response = await axios.get(getInstituionsURL);
+        const rawInstitution = response.data.find((inst: any) => inst.Code === institutionCode);
+        if (!rawInstitution) {
+          throw new Error(`Institution by '"${institutionCode}"' not found`);
+        }
+        var institutionID = rawInstitution.Id; // Langara = 15, UBC = 27, SFU = 24
+
+    }catch(error){
+      console.log("Error fetching course's institution ",error);
+      throw error;
     }
 
-  } catch(error){
-
-  }
-}
-
-const getTransfersForCourse = async(courseNumber: number, subjectCode: string, subjectId: number, institutionCode: string,institutionId: number, wpnonce: string){
-  try{
-    const fetchTransferURL = `https://www.bctransferguide.ca/wp-json/bctg-search/course-to-course/search-from?_wpnonce=${wpnonce}`
-    let page: number = 1;//Uses 1 for the first page so we can grab the max amount
-    const requestData = {
+    try{//Fetch subject info
+      const getSubjectsURL = `https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetSubjects?institutionID=${institutionID}&sending=true`;
+      const subjectsListResponse = await axios.get(getSubjectsURL)
+      const subject = subjectsListResponse.data.find((subj: any) => subj.Code === subjectCode);
+      if (!subject) {
+        throw new Error(`Subject code '${subjectCode}' not found`);
+      }
+      var subjectId = subject.Id;
+    } catch(error){
+        console.log("Error fetching course's subject ",error);
+        throw error;
+    }
+    try{
+      const fetchTransferURL = `https://www.bctransferguide.ca/wp-json/bctg-search/course-to-course/search-from?_wpnonce=${wpnonce}`
+      let page: number = 1;//Uses 1 for the first page so we can grab the max amount
+      const requestData = {
       courseNumber: courseNumber,
       institutionCode: institutionCode,
       isMember: true,//Every institution in BC is a member, iF we want to do cross-provincial this will need to be changed
       isPublic: null,//Not every institution is public but I guess the api doesn't care???
       pageNumber: page,
-      sender: institutionId,
+      sender: institutionID,
       subjectCode: subjectCode,//"MATH" "CPSC"
       subjectId: subjectId, //Unique for BCTransfer, CPSC = 531
-      year: 2025
-    };
-
-    const config = {
+      year: 2025 //Can change for it to get autoset
+      }; 
+      const config = {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       }
-    };
-    const firstResponse = await axios.post(fetchTransferURL, requestData, config)
-    const pagesTotal = firstResponse.data.totalPages;
+      };
+      const firstResponse = await axios.post(fetchTransferURL, requestData, config)
+      if (!firstResponse){
+        throw new Error(`Transfer Data for: '${subjectCode} ${courseNumber}' not found`);
+      }
 
-    if (firstResponse === pagesTotal){
-      return firstResponse.data.courses[0].agreements;
-    } else{
-      //Have to scan through multiple pages
+      const pagesTotal = firstResponse.data.totalPages;
+      var agreementsList: BCTransferAgreement[] = [];
+      
+      // Always process first page (already fetched)
+      for (const agreement of firstResponse.data.courses[0].agreements) {
+        processAgreement(agreement, courseNumber, subjectCode, institutionCode, agreementsList);
+      }
+
+      // If there are multiple pages, fetch and process remaining pages
+      if (pagesTotal > 1) {
+        for (let currentPage = 2; currentPage <= pagesTotal; currentPage++) {
+          const pageRequestData = {
+            ...requestData,
+            pageNumber: currentPage
+          };
+
+          const pageResponse = await axios.post(fetchTransferURL, pageRequestData, config);
+          
+          if (pageResponse && pageResponse.data.courses && pageResponse.data.courses[0]) {
+            for (const agreement of pageResponse.data.courses[0].agreements) {
+              processAgreement(agreement, courseNumber, subjectCode, institutionCode, agreementsList);
+            }
+          }
+        }
+      }
+      return agreementsList;
+    }catch(error){
+      console.log("Error fetching course-to-course info ",error);
+      throw error;
+    }
+  } catch (error){
+    console.log("Error fetching transfer agreements ",error);
+    throw error;
+  }
+  return agreementsList as BCTransferAgreement[];
+}
+
+// Helper function to process individual agreements
+const processAgreement = (agreement: any, courseNumber: number, subjectCode: string, institutionCode: string, agreementsList: BCTransferAgreement[]) => {
+  let agreementDetails: string = agreement.Detail;
+  
+  //Not every course has an End Date
+  const varEndDate = agreement.EndDate === null ? null : agreement.EndDate;
+
+  //Handle bundle course transfers
+  if (agreementDetails.includes("=")){
+    const [fromPart, toPart] = agreementDetails.split('=').map(part => part.trim());
+    let fromCourseNumbers: string[]  = [];
+    let fromCourseSubjects: string[] = [];
+    let fromCourseCredits: number[] = [];
+    let toCourseNumbers: string[]  = [];
+    let toCourseSubjects: string[] = [];
+    let toCourseCredits: number[] = [];
+
+    // Parse the "from" part (left side of =)
+    const fromCourses = fromPart.split('&').map(course => course.trim());
+    const firstCourseMatch = fromCourses[0].match(/([A-Z]+)\s+([A-Z]+)\s+(\d+|[X1-9]+)\s+\((\d+)\)/);
+    const secondCourseMatch = fromCourses[1]?.match(/([A-Z]+)\s+([A-Z]+)\s+(\d+|[X1-9]+)\s+\((\d+)\)/);
+    
+    if (firstCourseMatch && secondCourseMatch) {
+      fromCourseSubjects.push(firstCourseMatch[2], secondCourseMatch[2]);
+      fromCourseNumbers.push(firstCourseMatch[3],secondCourseMatch[3]);
+      fromCourseCredits.push(parseInt(firstCourseMatch[4]), parseInt(secondCourseMatch[4]));
     }
 
-  } catch (error){
+    // Parse the "to" part (right side of =)
+    const toCourses = toPart.split('&').map(course => course.trim());
+    const ThirdCourseMatch = toCourses[0].match(/([A-Z]+)\s+([A-Z]+)\s+(\d+|[X1-9]+)\s+\((\d+)\)/);
+    const FourthCourseMatch = toCourses[1]?.match(/([A-Z]+)\s+([A-Z]+)\s+(\d+|[X1-9]+)\s+\((\d+)\)/);
+    
+    if (ThirdCourseMatch && FourthCourseMatch) {
+      toCourseSubjects.push(ThirdCourseMatch[2], FourthCourseMatch[2]);
+      toCourseNumbers.push(ThirdCourseMatch[3],FourthCourseMatch[3]);
+      toCourseCredits.push(parseInt(ThirdCourseMatch[4]), parseInt(FourthCourseMatch[4]));
+    }
 
+    agreementsList.push({
+      type: 'bundle',
+      SendingCourseNumber: fromCourseNumbers,
+      SendingInstitutionCode: institutionCode,
+      SendingSubject: fromCourseSubjects,
+      SendingCredits: fromCourseCredits,
+      RecevingInstitutionCode: agreement.RcvrInstitutionCode,
+      ReceivingSubject: toCourseSubjects,
+      ReceivingCredits: toCourseCredits,
+      ReceivingCourseNumber: toCourseNumbers,
+      StartDate: agreement.StartDate,
+      EndDate: varEndDate,
+    } as BCTransferBundleAgreement);
+  } 
+  //Handle general prereq fufillments, SFU's Q fufillment
+  else if (agreementDetails.includes('&')){
+    const courseMatch = agreementDetails.match(/([A-Z]+)\s+([A-Z]+)\s+(\d+|[X1-9]+)\s+\((\d+)\)/);
+    if (courseMatch) {
+      const receivingSubject = courseMatch[2];
+      const receivingCourseNumber = courseMatch[3];
+      const receivingCredits = parseInt(courseMatch[4]);
+      agreementsList.push({
+        type: 'single',
+        SendingCourseNumber: courseNumber,
+        SendingInstitutionCode: institutionCode,
+        SendingSubject: subjectCode,
+        SendingCredits: agreement.SndrCourseCredit,
+        RecevingInstitutionCode: agreement.RcvrInstitutionCode,
+        ReceivingSubject: receivingSubject,
+        ReceivingCredits: receivingCredits,
+        ReceivingCourseNumber: receivingCourseNumber,
+        StartDate: agreement.StartDate,
+        EndDate: varEndDate,
+        details: agreement.Condition,
+      } as BCTransferSingleAgreement);
+    }
   }
-}
-export { getTransfersForInstitution };
+  //single transfer
+  else{
+    //Handle Courses that don't transfer
+    if (agreementDetails === "No credit"){
+      agreementsList.push({
+        type: 'single',
+        SendingCourseNumber: courseNumber,
+        SendingInstitutionCode: institutionCode,
+        SendingSubject: subjectCode,
+        SendingCredits: agreement.SndrCourseCredit,
+        RecevingInstitutionCode: agreement.RcvrInstitutionCode,
+        ReceivingSubject: "No Credit",  
+        ReceivingCredits: 0,
+        ReceivingCourseNumber: "No Credit",
+        StartDate: agreement.StartDate,
+        EndDate: varEndDate,
+      } as BCTransferSingleAgreement);
+    }
+    //Courses that transfer as a 1-to-1
+    else{
+      const courseMatch = agreementDetails.match(/([A-Z]+)\s+([A-Z]+)\s+(\d+|[X1-9]+)\s+\((\d+)\)/);
+      if (courseMatch) {
+        const receivingSubject = courseMatch[2];
+        const receivingCourseNumber = courseMatch[3];
+        const receivingCredits = parseInt(courseMatch[4]);
+        agreementsList.push({
+          type: 'single',
+          SendingCourseNumber: courseNumber,
+          SendingInstitutionCode: institutionCode,
+          SendingSubject: subjectCode,
+          SendingCredits: agreement.SndrCourseCredit,
+          RecevingInstitutionCode: agreement.RcvrInstitutionCode,
+          ReceivingSubject: receivingSubject,
+          ReceivingCredits: receivingCredits,
+          ReceivingCourseNumber: receivingCourseNumber,
+          StartDate: agreement.StartDate,
+          EndDate: varEndDate,
+        } as BCTransferSingleAgreement);
+      }
+    }
+  }
+};
+
+export { getTransfersForCourse };

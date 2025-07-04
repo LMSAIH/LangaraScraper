@@ -1,34 +1,36 @@
-export interface BCTransferSubject {
-  Id: number;
-  Code: string;
-  Title: string;
-  CourseList: BCTransferCourse[]
+export interface BCTransferSingleAgreement{
+  type: 'single';
+  SendingCourseNumber: number;
+  SendingInstitutionCode: string;
+  SendingSubject: string;
+  SendingCredits: number;
+  ReceivingCourseNumber: string;
+  RecevingInstitutionCode: string;
+  ReceivingSubject: string;
+  ReceivingCredits: number;
+  StartDate: number;
+  EndDate?: number;
+  details?: string;
 }
 
-export interface BCInstitution {
-  Code: string,
-  Id: number
-  SubjectList: BCTransferSubject[]
-}
-export interface BCTransferAgreement{
-  BCTransferCourseID: number,
-  RecevingInstituion: BCInstitution,
-  ReceivingSubject: BCTransferSubject,
-  ReceivingCredits: number,
-  SendingCredits: number,
-  StartDate: number,
-  EndDate: number
-}
-
-export interface BCTransferCourse{
-  Id: number,
-  Title: string,
-  Credits: number,
-  Subject: BCTransferSubject,
-  ParentInstitution: BCInstitution
-  Agreements: BCTransferAgreement[]
+export interface BCTransferBundleAgreement{
+  type: 'bundle';
+  SendingCourseNumber: string[];
+  SendingInstitutionCode: string;
+  SendingSubject: string[];
+  SendingCredits: number[];
+  ReceivingCourseNumber: string[];
+  RecevingInstitutionCode: string;
+  ReceivingSubject: string[];
+  ReceivingCredits: number[];
+  StartDate: number;
+  EndDate?: number;
+  details?: string;
 }
 
+export type BCTransferAgreement = 
+BCTransferSingleAgreement |
+BCTransferBundleAgreement;
 
 export interface MeetingTime {
   SectionType: string;
