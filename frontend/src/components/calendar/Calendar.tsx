@@ -150,39 +150,79 @@ export default function Calendar({
         return allEvents;
     }, [addedSections, hoveredSection, convertSectionToEvents]);
 
-    // Handle click to add section
-    const handleAddSection = useCallback(() => {
-        if (selectedSection && !addedSections.find(s => s.crn === selectedSection.crn)) {
-            onAddSection(selectedSection);
-        }
-    }, [selectedSection, addedSections, onAddSection]);
-
     // Event click handler
     const handleEventClick = useCallback((info: any) => {
         const section = info.event.extendedProps.sectionData;
         const isGhost = info.event.extendedProps.isGhost;
+        const crn = info.event.extendedProps.crn;
 
-        if (isGhost && section) {
+        if (isGhost) {
+            // If it's a ghost event, add the section
             onAddSection(section);
         } else {
-            // Show section details
-            alert(`Course: ${info.event.extendedProps.courseCode}
-Section: ${info.event.extendedProps.section}
-Type: ${info.event.extendedProps.sectionType}
-Instructor: ${info.event.extendedProps.instructor}
-Room: ${info.event.extendedProps.room}
-CRN: ${info.event.extendedProps.crn}`);
+            // If it's a regular event, show confirmation and remove
+            const confirmRemove = window.confirm(
+                `Remove ${section.courseCode} (Section ${section.section}, CRN ${crn}) from your schedule?`
+            );
+
+            if (confirmRemove) {
+                onRemoveSection(crn);
+            }
         }
-    }, [onAddSection]);
+    }, [onAddSection, onRemoveSection]);
 
     const formatEventContent = (eventInfo: any) => {
         const isGhost = eventInfo.event.extendedProps.isGhost;
+        const courseCode = eventInfo.event.extendedProps.courseCode;
+        const sectionType = eventInfo.event.extendedProps.sectionType;
+        const room = eventInfo.event.extendedProps.room;
+        const instructor = eventInfo.event.extendedProps.instructor;
+        const crn = eventInfo.event.extendedProps.crn;
+
         return (
-            <div className={`text-xs p-1 ${isGhost ? 'opacity-70 border-2 border-dashed' : ''}`}>
-                <div className="font-semibold">{eventInfo.event.extendedProps.courseCode}</div>
-                <div>{eventInfo.event.extendedProps.sectionType}</div>
-                <div>{eventInfo.event.extendedProps.room}</div>
-                {isGhost && <div className="text-xs italic">Click to add</div>}
+            <div className={`relative h-full w-full overflow-hidden ${isGhost
+                    ? 'bg-white/90 border-2 border-dashed border-blue-400 rounded-md shadow-sm backdrop-blur-sm'
+                    : 'bg-gradient-to-br from-white/20 to-white/10 rounded-md shadow-lg backdrop-blur-sm border border-white/30'
+                }`}>
+                <div className="p-2 h-full flex flex-col">
+                    {/* Header */}
+                    <div className="flex-shrink-0">
+                        <div className={`font-bold text-sm leading-tight ${isGhost ? 'text-blue-700' : 'text-white drop-shadow-sm'
+                            }`}>
+                            {courseCode}
+                        </div>
+                        <div className={`text-xs font-medium ${isGhost ? 'text-blue-600' : 'text-white/90 drop-shadow-sm'
+                            }`}>
+                            {sectionType}  
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-grow flex flex-col justify-center">
+                        <div className={`text-xs ${isGhost ? 'text-gray-700' : 'text-white/85 drop-shadow-sm'
+                            }`}>
+                            {room}
+                        </div>
+                        <div className={`text-xs ${isGhost ? 'text-gray-600' : 'text-white/80 drop-shadow-sm'
+                            }`}>
+                            {instructor.length > 15 ? instructor.substring(0, 15) + '...' : instructor}
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex-shrink-0 flex items-center justify-between mb-5">
+                        <div className={`text-xs font-mono ${isGhost ? 'text-gray-500' : 'text-white/70 drop-shadow-sm'
+                            }`}>
+                            {crn}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Hover effect overlay */}
+                <div className={`absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-200 ${isGhost
+                        ? 'bg-blue-50/50'
+                        : 'bg-black/20'
+                    } rounded-md pointer-events-none`}></div>
             </div>
         );
     };
@@ -199,16 +239,16 @@ CRN: ${info.event.extendedProps.crn}`);
                 eventClick={handleEventClick}
                 eventMouseEnter={(info) => {
                     info.el.style.cursor = 'pointer';
+                    info.el.style.zIndex = '10';
+                }}
+                eventMouseLeave={(info) => {
+                    info.el.style.zIndex = '1';
                 }}
                 allDaySlot={false}
-                businessHours={{
-                    daysOfWeek: [1, 2, 3, 4, 5],
-                    startTime: '08:00:00',
-                    endTime: '20:00:00',
-                }}
                 slotDuration="00:30:00"
                 slotMinTime={'08:00:00'}
                 slotMaxTime={'20:30:00'}
+                hiddenDays={[0]}
                 timeZone='local'
                 headerToolbar={{
                     left: '',
@@ -216,7 +256,6 @@ CRN: ${info.event.extendedProps.crn}`);
                     right: ''
                 }}
                 navLinks={false}
-
             />
         </div>
     );

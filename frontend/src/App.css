@@ -1,2 +1,197 @@
-@import 'tailwindcss'
+@import 'tailwindcss';
 
+/* Calendar container styling */
+.fc {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Time grid improvements */
+.fc-timegrid-slot {
+    height: 30px !important; /* Taller time slots */
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+.fc-timegrid-slot-minor {
+    border-bottom: 1px dashed #f3f4f6 !important;
+}
+
+/* Time labels styling */
+.fc-timegrid-axis {
+    background-color: #f9fafb !important;
+    border-right: 2px solid #e5e7eb !important;
+    width: 60px !important; /* Smaller time column */
+}
+
+.fc-timegrid-slot-label {
+    font-size: 11px !important; /* Smaller font */
+    font-weight: 500 !important;
+    color: #6b7280 !important;
+    padding: 6px !important; /* Reduced padding */
+}
+
+/* Day headers */
+.fc-col-header {
+    background-color: #f8fafc !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+    padding: 12px 0 !important; /* Reduced padding */
+}
+
+.fc-col-header-cell {
+    border-right: 1px solid #e5e7eb !important;
+}
+
+.fc-col-header-cell-cushion {
+    font-weight: 600 !important;
+    color: #1f2937 !important;
+    font-size: 13px !important; /* Smaller font */
+    padding: 8px !important; /* Reduced padding */
+}
+
+/* Day columns */
+.fc-timegrid-col {
+    border-right: 1px solid #e5e7eb !important;
+    background-color: #ffffff !important;
+}
+
+.fc-timegrid-col:hover {
+    background-color: #f8fafc !important;
+    transition: background-color 0.2s ease;
+}
+
+/* Business hours highlighting */
+.fc-timegrid-col .fc-business-hours {
+    background-color: #fefefe !important;
+}
+
+/* Non-business hours */
+.fc-timegrid-col .fc-non-business-hours {
+    background-color: #f8f9fa !important;
+}
+
+/* Event styling improvements */
+.fc-event {
+    border: none !important;
+    padding: 0 !important;
+    margin: 2px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.fc-event-main {
+    padding: 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+.fc-timegrid-event {
+    margin: 2px !important;
+    min-height: 40px !important;
+}
+
+.fc-event:hover {
+    transform: scale(1.02);
+    transition: all 0.2s ease;
+    z-index: 10 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Ghost event animation */
+.ghost-event {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.7;
+    }
+    50% {
+        opacity: 0.9;
+    }
+}
+
+/* Calendar grid lines */
+.fc-scrollgrid {
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+}
+
+.fc-scrollgrid-section > * {
+    border-left: none !important;
+    border-right: none !important;
+}
+
+/* Remove default borders and add custom ones */
+.fc-theme-standard td, .fc-theme-standard th {
+    border-color: #e5e7eb !important;
+}
+
+/* Scrollbar styling */
+.fc-scroller::-webkit-scrollbar {
+    width: 8px;
+}
+
+.fc-scroller::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.fc-scroller::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.fc-scroller::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Current time indicator */
+.fc-timegrid-now-indicator-line {
+    border-color: #ef4444 !important;
+    border-width: 2px !important;
+}
+
+.fc-timegrid-now-indicator-arrow {
+    border-top-color: #ef4444 !important;
+    border-bottom-color: #ef4444 !important;
+}
+
+/* Remove today column special styling */
+.fc-day-today {
+    background-color: inherit !important;
+}
+
+.fc-day-today .fc-col-header-cell-cushion {
+    background-color: inherit !important;
+    color: inherit !important;
+    border-radius: inherit !important;
+}
+
+/* Table improvements */
+.fc-scrollgrid-liquid {
+    height: 100% !important;
+}
+
+.fc-timegrid-divider {
+    display: none !important;
+}
+
+/* Better spacing for small events */
+.fc-timegrid-event-harness {
+    margin: 1px 2px !important;
+}
+
+/* Improve readability */
+.fc-timegrid-slot-label-cushion {
+    text-align: center !important;
+}
+
+/* Weekend styling */
+.fc-day-sat, .fc-day-sun {
+    background-color: #fafafa !important;
+}
+
+.fc-day-sat .fc-col-header-cell-cushion,
+.fc-day-sun .fc-col-header-cell-cushion {
+    color: #6b7280 !important;
+}

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { getTransfersForInstitution } from "../../Controllers/BCTransferGuideController";
+//import { getTransfersForInstitution } from "../../Controllers/BCTransferGuideController";
 
 const router = Router();
 
@@ -16,10 +16,10 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
 
     console.log(typeof institutionID, institutionID);
 
-    const subjects = await getTransfersForInstitution(institutionID);
-    console.log(subjects);
+    //const subjects = await getTransfersForInstitution(institutionID);
+    //console.log(subjects);
 
-    res.json(subjects);
+    //res.json(subjects);
     
   } catch (error) {
     console.error("Error fetching subjects:", error);
