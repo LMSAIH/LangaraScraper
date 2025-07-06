@@ -20,6 +20,7 @@ import {
 import {
   handleGetMetaCourses,
   handleGetMetaInstructors,
+  handleGetMetaTerms
 } from "../../Controllers/Client/Metadata";
 const router = Router();
 
@@ -52,6 +53,9 @@ router.get("/meta/subjects", handleGetMetaCourses);
 
 // Get all instructors
 router.get("/meta/instructors", handleGetMetaInstructors);
+
+//Gets all terms in the DB
+router.get("/meta/terms", handleGetMetaTerms);
 
 // Get all courses with sections and meeting times
 router.get("/sections/meetings/all", handleGetAggregatedCourseDataSectionAndMeetings);
