@@ -88,15 +88,18 @@ export const createSearchHandlers = (
   instructorFilter: string,
   subjectFilter: string,
   courseCodeFilter: string,
+  yearFilter: number,
+  semesterFilter: number,
   setInstructorFilter: React.Dispatch<React.SetStateAction<string>>,
   setSubjectFilter: React.Dispatch<React.SetStateAction<string>>,
   setCourseCodeFilter: React.Dispatch<React.SetStateAction<string>>,
   setPagination: React.Dispatch<React.SetStateAction<any>>,
-  getSections: (instructor?: string, subject?: string, courseCode?: string, page?: number) => Promise<void>
+  getSections: (instructor?: string, subject?: string, courseCode?: string, year?: number, semester?: number, page?: number) => Promise<void>
 ) => {
+
   const handleSearch = () => {
     setPagination((prev: any) => ({ ...prev, page: 1 }));
-    getSections(instructorFilter, subjectFilter, courseCodeFilter, 1);
+    getSections(instructorFilter, subjectFilter, courseCodeFilter, yearFilter, semesterFilter, 1);
   };
 
   const handleClearFilters = () => {
@@ -104,11 +107,11 @@ export const createSearchHandlers = (
     setSubjectFilter('');
     setCourseCodeFilter('');
     setPagination((prev: any) => ({ ...prev, page: 1 }));
-    getSections('', '', '', 1);
+    getSections('', '', '', yearFilter, semesterFilter, 1);
   };
 
   const handlePageChange = (newPage: number) => {
-    getSections(instructorFilter, subjectFilter, courseCodeFilter, newPage);
+    getSections(instructorFilter, subjectFilter, courseCodeFilter, yearFilter, semesterFilter, newPage);
   };
 
   return {
