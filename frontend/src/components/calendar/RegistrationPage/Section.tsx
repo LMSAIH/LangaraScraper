@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import type { Section } from '../../../Types/Registration'
 import { getCourseStatus, getStripeColor, formatDays, formatTime } from '../../../Utils/RegistrationUtils';
+import { FaCaretDown, FaCaretUp } from "react-icons/fa6";
 
 interface SectionComponentProps {
   section: Section;
@@ -18,9 +20,15 @@ const SectionComponent = ({
   onMouseEnter,
   onMouseLeave
 }: SectionComponentProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const status = getCourseStatus(section);
   const stripeColor = getStripeColor(status);
   const isCancelled = status === 'cancelled';
+
+  const handleToggleExpand = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsExpanded(!isExpanded);
+  };
 
   return (
     <div
@@ -48,6 +56,12 @@ const SectionComponent = ({
             {status === 'online-tba' && (
               <span className="text-yellow-600 text-xs">ONLINE/TBA</span>
             )}
+            <button
+              onClick={handleToggleExpand}
+              className="text-gray-500 hover:text-gray-700 text-xs p-1"
+            >
+              {isExpanded ? <FaCaretUp /> : <FaCaretDown />}
+            </button>
           </div>
         </div>
         <div className='text-xs text-gray-600'>{section.title}</div>
@@ -69,6 +83,32 @@ const SectionComponent = ({
             {formatDays(meeting.days)} {formatTime(meeting.time)} • {meeting.instructor}
           </div>
         ))}
+
+        {/* Extended Information - Dropdown */}
+        {isExpanded && (
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <div className="font-medium text-gray-700 mb-1">Course Details</div>
+                <div className="text-gray-600">Credits: {section.credits}</div>
+          
+              </div>
+              
+              <div>
+                <div className="font-medium text-gray-700 mb-1">Additional Info</div>
+                {section.additionalFees && section.additionalFees !== '' && (
+                  <div className="text-gray-600">Fees: {section.additionalFees}</div>
+                )}
+                {section.repeatLimit && section.repeatLimit !== '' && (
+                  <div className="text-gray-600">Repeat Limit: {section.repeatLimit}</div>
+                )}
+                {section.notes && section.notes !== '' && (
+                  <div className="text-gray-600">Notes: {section.notes}</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
