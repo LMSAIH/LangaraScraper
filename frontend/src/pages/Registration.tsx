@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react';
 import Calendar from '../components/calendar/Calendar';
 import Filters from '../components/calendar/RegistrationPage/Filters';
 import SectionList from '../components/calendar/RegistrationPage/SectionList'
-import SectionDetails from '../components/calendar/RegistrationPage/SectionDetails'
 import type { Section, ApiResponse } from '../Types/Registration';
-import { fetchSubjects, fetchSections } from '../Api/Requests';
+import { fetchSubjects, fetchSections, fetchTerms } from '../Api/Requests';
 import {
     getCourseStatus,
-    createSectionHandlers,
-    createSearchHandlers
+    createSectionHandlers
 } from '../Utils/RegistrationUtils';
 
 const Registration = () => {
@@ -29,11 +27,54 @@ const Registration = () => {
         totalPages: 0
     });
     const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null);
+    const [terms, setTerms] = useState<string[]>([]);
+    const [term, setTerm] = useState<string>('');
+
+    const [yearFilter, setYearFilter] = useState<number>(2025);
+    const [semesterFilter, setSemesterFilter] = useState<number>(30);
+
+    const getTerms = async () => {
+        try {
+            setLoading(true);
+            const terms = await fetchTerms();
+            if (!terms || terms.length === 0) {
+                throw new Error('No terms available');
+            }
+
+            setTerms(terms);
+            setTerm(terms[terms.length - 1]);
+
+        } catch (error) {
+            setError('Error fetching terms: ' + (error as Error).message);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    // Parse term to get year and semester
+    const parseTermToYearSemester = (termString: string) => {
+        if (termString.length === 6) {
+            const year = parseInt(termString.substring(0, 4));
+            const semester = parseInt(termString.substring(4, 6));
+            return { year, semester };
+        }
+        return null;
+    };
+
+    // Handle term change and update year/semester
+    const handleTermChange = (newTerm: string) => {
+        setTerm(newTerm);
+        const parsed = parseTermToYearSemester(newTerm);
+        if (parsed) {
+            setYearFilter(parsed.year);
+            setSemesterFilter(parsed.semester);
+        }
+    };
 
     // Fetch subjects for dropdown
-    const getSubjects = async () => {
+    const getSubjects = async (year: number, semester: number) => {
         try {
-            const sub = await fetchSubjects();
+            const sub = await fetchSubjects(year, semester);
             setSubjects(sub.subjects || []);
         } catch (error) {
             setError('Error fetching subjects: ' + (error as Error).message);
@@ -41,12 +82,12 @@ const Registration = () => {
         }
     };
 
-    const getSections = async (instructor?: string, subject?: string, courseCode?: string, page: number = 1) => {
+    const getSections = async (year: number, semester: number, instructor?: string, subject?: string, courseCode?: string, page: number = 1) => {
         try {
             setLoading(true);
             setError(null);
 
-            const sections = await fetchSections(pagination, instructor, subject, courseCode, page);
+            const sections = await fetchSections(pagination, year, semester, instructor, subject, courseCode, page);
 
             if (sections.success) {
                 setSections(sections.sections);
@@ -64,9 +105,27 @@ const Registration = () => {
     };
 
     useEffect(() => {
-        getSubjects();
-        getSections();
+        getTerms();
     }, []);
+
+    // Update year/semester when term changes
+    useEffect(() => {
+        if (term) {
+            const parsed = parseTermToYearSemester(term);
+            if (parsed) {
+                setYearFilter(parsed.year);
+                setSemesterFilter(parsed.semester);
+            }
+        }
+    }, [term]);
+
+    // Fetch subjects and sections when year/semester changes
+    useEffect(() => {
+        if (yearFilter && semesterFilter) {
+            getSubjects(yearFilter, semesterFilter);
+            getSections(yearFilter, semesterFilter);
+        }
+    }, [yearFilter, semesterFilter]);
 
     // Create section handlers using utility function
     const {
@@ -79,24 +138,26 @@ const Registration = () => {
         setSelectedSection,
         setHoveredSection,
         setAddedSections,
-        addedSections
+        addedSections,
     );
 
-    // Create search handlers using utility function
-    const {
-        handleSearch,
-        handleClearFilters,
-        handlePageChange
-    } = createSearchHandlers(
-        instructorFilter,
-        subjectFilter,
-        courseCodeFilter,
-        setInstructorFilter,
-        setSubjectFilter,
-        setCourseCodeFilter,
-        setPagination,
-        getSections
-    );
+    // Create search handlers directly
+    const handleSearch = () => {
+        setPagination(prev => ({ ...prev, page: 1 }));
+        getSections(yearFilter, semesterFilter, instructorFilter, subjectFilter, courseCodeFilter, 1);
+    };
+
+    const handleClearFilters = () => {
+        setInstructorFilter('');
+        setSubjectFilter('');
+        setCourseCodeFilter('');
+        setPagination(prev => ({ ...prev, page: 1 }));
+        getSections(yearFilter, semesterFilter, '', '', '', 1);
+    };
+
+    const handlePageChange = (newPage: number) => {
+        getSections(yearFilter, semesterFilter, instructorFilter, subjectFilter, courseCodeFilter, newPage);
+    };
 
     // Handle section click - toggle add/remove
     const handleSectionClick = (section: Section) => {
@@ -117,25 +178,24 @@ const Registration = () => {
     };
 
     return (
-        <div>
-            <h1 className='text-4xl font-bold mb-6'>Registration</h1>
-
+        <div className="bg-neutral-100">
             <div className='w-full flex flex-row justify-center flex-wrap p-8 gap-6'>
 
                 {/* Course Selection Side */}
                 <div className='w-1/4 min-w-80'>
 
-
-
                     {/* Filters Component */}
                     <Filters
                         subjects={subjects}
+                        terms={terms}
                         instructorFilter={instructorFilter}
                         subjectFilter={subjectFilter}
                         courseCodeFilter={courseCodeFilter}
                         setInstructorFilter={setInstructorFilter}
                         setSubjectFilter={setSubjectFilter}
                         setCourseCodeFilter={setCourseCodeFilter}
+                        setTerm={handleTermChange}
+                        setError={setError}
                         onSearch={handleSearch}
                         onClearFilters={handleClearFilters}
                     />
@@ -154,7 +214,7 @@ const Registration = () => {
 
                     {/* Pagination */}
                     {!loading && pagination.totalPages > 1 && (
-                        <div className='mt-4 flex items-center justify-between'>
+                        <div className='my-4 flex items-center justify-between'>
                             <button
                                 onClick={() => handlePageChange(pagination.page - 1)}
                                 disabled={pagination.page === 1}
@@ -177,21 +237,12 @@ const Registration = () => {
                         </div>
                     )}
 
-                    {/* Section Details Component */}
-                    {selectedSection && (
-                        <SectionDetails
-                            section={selectedSection}
-                            isAdded={addedSections.some(s => s.crn === selectedSection.crn)}
-                            onToggleSection={handleSectionClick}
-                        />
-                    )}
-
-
                     {apiResponse && (
-                        <div className='mb-4 p-3 bg-blue-50 rounded-lg text-sm'>
+                        <div className='my-4 p-3 bg-blue-50 rounded-lg text-sm'>
                             <div className='font-medium mb-1'>Search Results:</div>
                             <div>Showing {apiResponse.sections.length} of {apiResponse.pagination.total} sections</div>
                             <div>Page {apiResponse.pagination.page} of {apiResponse.pagination.totalPages}</div>
+                            <div className='text-blue-600'>Year: {yearFilter}, Semester: {semesterFilter}</div>
                             {apiResponse.filters.instructor && (
                                 <div className='text-blue-600'>Filtered by instructor: {apiResponse.filters.instructor}</div>
                             )}
@@ -205,7 +256,7 @@ const Registration = () => {
                     )}
 
                     {/* Legend */}
-                    <div className='mb-4 p-3 bg-gray-50 rounded-lg text-xs'>
+                    <div className='my-4 p-3 bg-gray-50 rounded-lg text-xs'>
                         <div className='font-medium mb-2'>Status Legend:</div>
                         <div className='flex items-center gap-2 mb-1'>
                             <div className='w-3 h-3 bg-green-500 rounded'></div>
