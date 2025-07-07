@@ -8,6 +8,7 @@ import {
     getCourseStatus,
     createSectionHandlers
 } from '../Utils/RegistrationUtils';
+import { FaCaretLeft, FaCaretRight } from 'react-icons/fa';
 
 const Registration = () => {
     const [sections, setSections] = useState<Section[]>([]);
@@ -33,6 +34,7 @@ const Registration = () => {
     const [yearFilter, setYearFilter] = useState<number>(2025);
     const [semesterFilter, setSemesterFilter] = useState<number>(30);
 
+    // Fetch terms from API
     const getTerms = async () => {
         try {
             setLoading(true);
@@ -82,6 +84,7 @@ const Registration = () => {
         }
     };
 
+    // Fetch sections based on filters
     const getSections = async (year: number, semester: number, instructor?: string, subject?: string, courseCode?: string, page: number = 1) => {
         try {
             setLoading(true);
@@ -178,117 +181,229 @@ const Registration = () => {
     };
 
     return (
-        <div className="bg-neutral-100">
-            <div className='w-full flex flex-row justify-center flex-wrap p-8 gap-6'>
+        <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 transition-colors duration-300">
+            <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="flex flex-col lg:flex-row gap-6 h-full">
 
-                {/* Course Selection Side */}
-                <div className='w-1/4 min-w-80'>
+                    {/* Left Sidebar - Course Selection */}
+                    <div className="w-full lg:w-1/3 flex flex-col space-y-6 self-start animate-slide-up ">
 
-                    {/* Filters Component */}
-                    <Filters
-                        subjects={subjects}
-                        terms={terms}
-                        instructorFilter={instructorFilter}
-                        subjectFilter={subjectFilter}
-                        courseCodeFilter={courseCodeFilter}
-                        setInstructorFilter={setInstructorFilter}
-                        setSubjectFilter={setSubjectFilter}
-                        setCourseCodeFilter={setCourseCodeFilter}
-                        setTerm={handleTermChange}
-                        setError={setError}
-                        onSearch={handleSearch}
-                        onClearFilters={handleClearFilters}
-                    />
-
-                    {/* Section List Component */}
-                    <SectionList
-                        sections={sections}
-                        selectedSection={selectedSection}
-                        addedSections={addedSections}
-                        loading={loading}
-                        error={error}
-                        onSectionClick={handleSectionClick}
-                        onSectionHover={handleSectionHover}
-                        onSectionLeave={handleSectionLeave}
-                    />
-
-                    {/* Pagination */}
-                    {!loading && pagination.totalPages > 1 && (
-                        <div className='my-4 flex items-center justify-between'>
-                            <button
-                                onClick={() => handlePageChange(pagination.page - 1)}
-                                disabled={pagination.page === 1}
-                                className='px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 disabled:bg-gray-300 disabled:cursor-not-allowed'
-                            >
-                                Previous
-                            </button>
-
-                            <span className='text-sm text-gray-600'>
-                                Page {pagination.page} of {pagination.totalPages}
-                            </span>
-
-                            <button
-                                onClick={() => handlePageChange(pagination.page + 1)}
-                                disabled={pagination.page === pagination.totalPages}
-                                className='px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 disabled:bg-gray-300 disabled:cursor-not-allowed'
-                            >
-                                Next
-                            </button>
+                        {/* Filters Section */}
+                        <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-sm border border-gray-200 dark:border-zinc-700 transition-all duration-300 hover:shadow-md overflow-hidden">
+                            <Filters
+                                subjects={subjects}
+                                terms={terms}
+                                instructorFilter={instructorFilter}
+                                subjectFilter={subjectFilter}
+                                courseCodeFilter={courseCodeFilter}
+                                setInstructorFilter={setInstructorFilter}
+                                setSubjectFilter={setSubjectFilter}
+                                setCourseCodeFilter={setCourseCodeFilter}
+                                setTerm={handleTermChange}
+                                setError={setError}
+                                onSearch={handleSearch}
+                                onClearFilters={handleClearFilters}
+                            />
                         </div>
-                    )}
 
-                    {apiResponse && (
-                        <div className='my-4 p-3 bg-blue-50 rounded-lg text-sm'>
-                            <div className='font-medium mb-1'>Search Results:</div>
-                            <div>Showing {apiResponse.sections.length} of {apiResponse.pagination.total} sections</div>
-                            <div>Page {apiResponse.pagination.page} of {apiResponse.pagination.totalPages}</div>
-                            <div className='text-blue-600'>Year: {yearFilter}, Semester: {semesterFilter}</div>
-                            {apiResponse.filters.instructor && (
-                                <div className='text-blue-600'>Filtered by instructor: {apiResponse.filters.instructor}</div>
-                            )}
-                            {apiResponse.filters.subject && (
-                                <div className='text-blue-600'>Filtered by subject: {apiResponse.filters.subject}</div>
-                            )}
-                            {apiResponse.filters.courseCode && (
-                                <div className='text-blue-600'>Filtered by course code: {apiResponse.filters.courseCode}</div>
-                            )}
+                        {/* Course List Section */}
+                        <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-sm border border-gray-200 dark:border-zinc-700 transition-all duration-300 hover:shadow-md overflow-hidden flex-1 min-h-0">
+                            <div className="p-6 border-b border-gray-200 dark:border-zinc-700">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        Available Courses
+                                    </h3>
+                                    <div className="flex items-center space-x-2">
+                                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                                            {sections.length} courses
+                                        </div>
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex-1 overflow-hidden">
+                                <SectionList
+                                    sections={sections}
+                                    selectedSection={selectedSection}
+                                    addedSections={addedSections}
+                                    loading={loading}
+                                    error={error}
+                                    onSectionClick={handleSectionClick}
+                                    onSectionHover={handleSectionHover}
+                                    onSectionLeave={handleSectionLeave}
+                                />
+                            </div>
                         </div>
-                    )}
 
-                    {/* Legend */}
-                    <div className='my-4 p-3 bg-gray-50 rounded-lg text-xs'>
-                        <div className='font-medium mb-2'>Status Legend:</div>
-                        <div className='flex items-center gap-2 mb-1'>
-                            <div className='w-3 h-3 bg-green-500 rounded'></div>
-                            <span>Regular In-Person Course</span>
-                        </div>
-                        <div className='flex items-center gap-2 mb-1'>
-                            <div className='w-3 h-3 bg-yellow-500 rounded'></div>
-                            <span>Online/TBA Course</span>
-                        </div>
-                        <div className='flex items-center gap-2'>
-                            <div className='w-3 h-3 bg-red-500 rounded'></div>
-                            <span>Cancelled Course</span>
-                        </div>
-                        <div className='text-xs text-gray-600 mt-2 italic'>
-                            Click on any course to add/remove it from your schedule
-                        </div>
+                        {/* Pagination */}
+                        {!loading && pagination.totalPages > 1 && (
+                            <div className="bg-white dark:bg-zinc-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-zinc-700 transition-all duration-300 hover:shadow-md">
+                                <div className="flex flex-col space-y-3">
+                                    {/* Page info */}
+                                    <div className="flex justify-center">
+                                        <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                                            Page {pagination.page} of {pagination.totalPages}
+                                        </span>
+                                    </div>
+
+                                    {/* Navigation buttons and page numbers */}
+                                    <div className="flex justify-center items-center">
+                                        <div className="flex space-x-1 items-center">
+                                            {/* Previous button */}
+                                            <button
+                                                onClick={() => handlePageChange(pagination.page - 1)}
+                                                disabled={pagination.page === 1}
+                                                className="w-8 h-8 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                            >
+                                                <FaCaretLeft className="w-4 h-4" />
+                                            </button>
+
+                                            {(() => {
+                                                const currentPage = pagination.page;
+                                                const totalPages = pagination.totalPages;
+                                                const maxVisiblePages = 5;
+
+                                                let startPage: number;
+                                                let endPage: number;
+
+                                                if (totalPages <= maxVisiblePages) {
+                                                    // Show all pages if total is less than max visible
+                                                    startPage = 1;
+                                                    endPage = totalPages;
+                                                } else {
+                                                    // Calculate start and end pages to keep current page centered
+                                                    const halfVisible = Math.floor(maxVisiblePages / 2);
+
+                                                    if (currentPage <= halfVisible) {
+                                                        // Near the beginning
+                                                        startPage = 1;
+                                                        endPage = maxVisiblePages;
+                                                    } else if (currentPage + halfVisible >= totalPages) {
+                                                        // Near the end
+                                                        startPage = totalPages - maxVisiblePages + 1;
+                                                        endPage = totalPages;
+                                                    } else {
+                                                        // In the middle
+                                                        startPage = currentPage - halfVisible;
+                                                        endPage = currentPage + halfVisible;
+                                                    }
+                                                }
+
+                                                const pages = [];
+
+                                                // Add first page and ellipsis if needed
+                                                if (startPage > 1) {
+                                                    pages.push(
+                                                        <button
+                                                            key={1}
+                                                            onClick={() => handlePageChange(1)}
+                                                            className="w-8 h-8 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600"
+                                                        >
+                                                            1
+                                                        </button>
+                                                    );
+                                                    if (startPage > 2) {
+                                                        pages.push(
+                                                            <span key="ellipsis1" className="flex items-center px-2 text-gray-400 text-sm">...</span>
+                                                        );
+                                                    }
+                                                }
+
+                                                // Add visible page numbers
+                                                for (let i = startPage; i <= endPage; i++) {
+                                                    pages.push(
+                                                        <button
+                                                            key={i}
+                                                            onClick={() => handlePageChange(i)}
+                                                            className={`w-8 h-8 rounded-lg text-sm font-medium transition-all duration-200 ${i === currentPage
+                                                                ? 'bg-blue-500 text-white shadow-md transform scale-105'
+                                                                : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
+                                                                }`}
+                                                        >
+                                                            {i}
+                                                        </button>
+                                                    );
+                                                }
+
+                                                // Add last page and ellipsis if needed
+                                                if (endPage < totalPages) {
+                                                    if (endPage < totalPages - 1) {
+                                                        pages.push(
+                                                            <span key="ellipsis2" className="flex items-center px-2 text-gray-400 text-sm">...</span>
+                                                        );
+                                                    }
+                                                    pages.push(
+                                                        <button
+                                                            key={totalPages}
+                                                            onClick={() => handlePageChange(totalPages)}
+                                                            className="w-8 h-8 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600"
+                                                        >
+                                                            {totalPages}
+                                                        </button>
+                                                    );
+                                                }
+
+                                                return pages;
+                                            })()}
+
+                                            {/* Next button */}
+                                            <button
+                                                onClick={() => handlePageChange(pagination.page + 1)}
+                                                disabled={pagination.page === pagination.totalPages}
+                                                className="w-8 h-8 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                            >
+                                                <FaCaretRight className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {apiResponse && <div className="flex justify-center">
+                                        <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                                            Displaying {apiResponse.count} of {apiResponse.pagination.total} sections
+                                        </span>
+                                    </div>}
+                                </div>
+                            </div>
+                        )}
+
+
                     </div>
 
-                </div>
-
-                {/* Calendar Side */}
-                <div className='w-7/12'>
-                    <Calendar
-                        selectedSection={selectedSection}
-                        hoveredSection={hoveredSection}
-                        onAddSection={handleAddSection}
-                        addedSections={addedSections}
-                        onRemoveSection={handleRemoveSection}
-                    />
+                    {/* Right Side - Calendar */}
+                    <div className=" bg-white dark:bg-zinc-800 animate-slide-up w-full lg:w-2/3 self-start" style={{ animationDelay: '0.1s' }}>
+                        <div className=" rounded-2xl shadow-sm border border-gray-200 dark:border-zinc-700 transition-all duration-300 hover:shadow-md overflow-hidden h-full flex flex-col">
+                            <div className="p-6 border-b border-gray-200 dark:border-zinc-700">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">                                        Your Schedule
+                                    </h3>
+                                    <div className="flex items-center space-x-3">
+                                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                                            <span className="font-medium">{addedSections.length}</span> courses selected
+                                        </div>
+                                        <div className="flex space-x-1">
+                                            {[...Array(Math.min(3, addedSections.length))].map((_, i) => (
+                                                <div
+                                                    key={i}
+                                                    className="w-2 h-2 bg-green-500 rounded-full animate-pulse"
+                                                    style={{ animationDelay: `${i * 0.2}s` }}
+                                                ></div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex-1 p-6 overflow-auto">
+                                <Calendar
+                                    selectedSection={selectedSection}
+                                    hoveredSection={hoveredSection}
+                                    onAddSection={handleAddSection}
+                                    addedSections={addedSections}
+                                    onRemoveSection={handleRemoveSection}
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
         </div>
     );
 };
