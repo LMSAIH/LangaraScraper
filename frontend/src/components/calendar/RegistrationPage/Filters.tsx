@@ -72,16 +72,20 @@ const Filters = ({
   };
 
   return (
-    <div className='mb-6 space-y-4'>
+    <div className='p-6 space-y-6'>
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Search Filters</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">Find the perfect courses for your schedule</p>
+      </div>
 
       {/* Term and Subject Filters on Same Row */}
-      <div className='grid grid-cols-2 gap-4'>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
         {/* Term Filter */}
-        <div>
-          <label className='block text-sm font-medium mb-2'>Select Term:</label>
+        <div className="space-y-2">
+          <label className='block text-sm font-semibold text-gray-700 dark:text-gray-300'>Term</label>
           <select
             onChange={(e) => setTerm(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md text-sm'
+            className='w-full px-4 py-3 bg-gray-50 dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:bg-gray-100 dark:hover:bg-zinc-600'
           >
             {terms.sort((a, b) => (a < b ? 1 : -1)).map((term) => (
               <option key={term} value={term}>
@@ -92,12 +96,12 @@ const Filters = ({
         </div>
 
         {/* Subject Filter */}
-        <div>
-          <label className='block text-sm font-medium mb-2'>Filter by Subject:</label>
+        <div className="space-y-2">
+          <label className='block text-sm font-semibold text-gray-700 dark:text-gray-300'>Subject</label>
           <select
             value={subjectFilter}
             onChange={(e) => setSubjectFilter(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md text-sm'
+            className='w-full px-4 py-3 bg-gray-50 dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:bg-gray-100 dark:hover:bg-zinc-600'
           >
             <option value="">All Subjects</option>
             {subjects.map((subject) => (
@@ -110,27 +114,27 @@ const Filters = ({
       </div>
 
       {/* Search Filter with Toggle */}
-      <div>
-        <label className='block text-sm font-medium mb-2'>Search by:</label>
+      <div className="space-y-4">
+        <label className='block text-sm font-semibold text-gray-700 dark:text-gray-300'>Search Type</label>
 
         {/* Toggle Buttons */}
-        <div className='flex mb-2 border border-gray-300 rounded-md overflow-hidden'>
+        <div className='flex bg-gray-100 dark:bg-zinc-700 rounded-xl p-1 transition-colors duration-200'>
           <button
             onClick={() => setSearchType('course')}
-            className={`flex-1 px-3 py-2 text-sm ${
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
               searchType === 'course'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-white dark:bg-zinc-600 text-gray-900 dark:text-white shadow-sm transform scale-105'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
             Course Code
           </button>
           <button
             onClick={() => setSearchType('instructor')}
-            className={`flex-1 px-3 py-2 text-sm ${
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
               searchType === 'instructor'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-white dark:bg-zinc-600 text-gray-900 dark:text-white shadow-sm transform scale-105'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
             Instructor
@@ -138,31 +142,38 @@ const Filters = ({
         </div>
 
         {/* Search Input */}
-        <input
-          type="text"
-          value={getCurrentSearchValue()}
-          onChange={(e) => handleSearchInputChange(e.target.value)}
-          placeholder={
-            searchType === 'course'
-              ? "Enter course code (e.g., CPSC 1050)"
-              : "Enter instructor name"
-          }
-          className='w-full px-3 py-2 border border-gray-300 rounded-md text-sm'
-          onKeyDown={(e) => e.key === 'Enter' && onSearch()}
-        />
+        <div className="relative">
+          <input
+            type="text"
+            value={getCurrentSearchValue()}
+            onChange={(e) => handleSearchInputChange(e.target.value)}
+            placeholder={
+              searchType === 'course'
+                ? "Enter course code (e.g., CPSC 1050)"
+                : "Enter instructor name"
+            }
+            className='w-full px-4 py-3 pl-10 bg-gray-50 dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:bg-gray-100 dark:hover:bg-zinc-600'
+            onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+          />
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
       </div>
 
-      {/* Filter Buttons */}
-      <div className='flex gap-2'>
+      {/* Action Buttons */}
+      <div className='flex gap-3'>
         <button
           onClick={onSearch}
-          className='flex-1 px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600'
+          className='flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-800'
         >
-          Search
+          Search Courses
         </button>
         <button
           onClick={onClearFilters}
-          className='flex-1 px-4 py-2 bg-gray-500 text-white rounded-md text-sm hover:bg-gray-600'
+          className='px-6 py-3 bg-gray-100 dark:bg-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-600 text-gray-700 dark:text-gray-300 rounded-xl font-semibold text-sm transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md border border-gray-200 dark:border-zinc-600'
         >
           Clear
         </button>
