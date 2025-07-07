@@ -369,8 +369,8 @@ const Registration = () => {
                     </div>
 
                     {/* Right Side - Calendar */}
-                    <div className=" bg-white dark:bg-zinc-800 animate-slide-up w-full lg:w-2/3 self-start" style={{ animationDelay: '0.1s' }}>
-                        <div className=" rounded-2xl shadow-sm border border-gray-200 dark:border-zinc-700 transition-all duration-300 hover:shadow-md overflow-hidden h-full flex flex-col">
+                    <div className="  animate-slide-up w-full lg:w-2/3 self-start" style={{ animationDelay: '0.1s' }}>
+                        <div className=" rounded-2xl bg-white dark:bg-zinc-800 shadow-sm border border-gray-200 dark:border-zinc-700 transition-all duration-300 hover:shadow-md overflow-hidden h-full flex flex-col">
                             <div className="p-6 border-b border-gray-200 dark:border-zinc-700">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">                                        Your Schedule
