@@ -3,12 +3,7 @@ import * as cheerio from "cheerio";
 import { CourseInfo } from "../../Models/CourseInfo";
 import { getCourses, getSubjects } from "./ScraperUtils";
 import { CourseInfo as CourseInfoModel, ICourseInfo } from "../../Models/CourseInfo";
-import { get } from "http";
-
-interface CourseAttribute {
-    courseCode: string;
-    attributes: string[];
-}
+import { CourseAttribute, CourseDescription } from "../../Types/ScraperTypes";
 
 const getAttributes = async () : Promise<CourseAttribute[]> => {
     const url = "https://swing.langara.bc.ca/prod/hzgkcald.P_DispCrseAttr";
@@ -41,19 +36,12 @@ const getAttributes = async () : Promise<CourseAttribute[]> => {
               });
             }
         });
-        console.log("Got attributes", courseAttributes.length);
         return courseAttributes;
   } catch (error) {
     console.error("Error fetching attributes:", error);
     throw new Error("Failed to fetch attributes");
   }
 
-}
-
-export interface CourseDescription {
-    courseCode: string;
-    title?: string;
-    description?: string;
 }
 
 const getCourseDescription = async (year: number , semester: number) => {
@@ -100,17 +88,12 @@ const getCourseDescription = async (year: number , semester: number) => {
                   title: title,
                   description: description
               });
-              
-                
-                // Add a small delay to avoid overwhelming the server
-                //await new Promise(resolve => setTimeout(resolve, 100));
                 
             } catch (error) {
                 console.error(`Error fetching description for ${courseCode}:`, error);
                 throw new Error(`Failed to fetch description for ${courseCode}`);
             }
         }
-        console.log("Got descriptions", courseDescriptions.length);
         return courseDescriptions;
     } catch (error) {
         console.error("Error fetching course descriptions:", error);
@@ -139,14 +122,11 @@ const getCourseInfo = async (year: number, semester: number): Promise<ICourseInf
             title: desc.title,
             description: desc.description,
             attributes: attrMap.get(desc.courseCode) || [],
-            createdAt: new Date(),
             updatedAt: new Date(),
         } as ICourseInfo;
     });
-    console.log("Got course info", merged.length);
     return merged;
 
 };
-getCourseInfo(2025, 30);
 // Export the function
 export { getCourseInfo };

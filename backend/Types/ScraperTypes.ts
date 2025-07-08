@@ -61,9 +61,13 @@ export interface CourseData {
   sections: CourseSection[];
 }
 
-export interface CourseInfo {
+export interface CourseAttribute {
+  courseCode: string;
+  attributes: string[];
+}
+
+export interface CourseDescription {
   courseCode: string;
   title?: string;
   description?: string;
-  attributes: string[];
 }
