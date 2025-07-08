@@ -239,6 +239,11 @@ export default function Calendar({
                 eventMouseLeave={(info) => {
                     info.el.style.zIndex = '1';
                 }}
+                businessHours={{
+                    daysOfWeek: [1, 2, 3, 4, 5, 6], // Monday to Saturday
+                    startTime: '08:00',
+                    endTime: '20:30'
+                }}
                 allDaySlot={false}
                 slotDuration="00:30:00"
                 slotMinTime={'08:00:00'}
