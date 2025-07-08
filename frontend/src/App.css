@@ -75,7 +75,7 @@
 }
 
 .dark .fc-timegrid-axis {
-    background-color: #0f172a !important;
+    background-color: #18181b !important;
     border-right-color: #3f3f46 !important;
 }
 
@@ -98,7 +98,7 @@
 }
 
 .dark .fc-col-header {
-    background-color: #0f172a !important;
+    background-color: #18181b !important;
     border-bottom-color: #3f3f46 !important;
 }
 
@@ -107,7 +107,7 @@
 }
 
 .dark .fc-col-header-cell {
-    border-right-color: #3f3f46 !important;
+    border-right-color: #18181b !important;
 }
 
 .fc-col-header-cell-cushion {
@@ -119,6 +119,7 @@
 
 .dark .fc-col-header-cell-cushion {
     color: #f4f4f5 !important;
+    
 }
 
 /* Day columns */
@@ -131,13 +132,33 @@
     background-color: #18181b !important;
 }
 
-/* Today highlighting */
-.fc-day-today {
-    background-color: #fef3c7 !important;
+/* More specific selectors for all day columns including Saturday */
+.dark .fc-timegrid-col,
+.dark .fc-daygrid-day,
+.dark .fc-timegrid-col.fc-day-sat,
+.dark .fc-daygrid-day.fc-day-sat {
+    background-color: #18181b !important;
 }
 
-.dark .fc-day-today {
-    background-color: #422006 !important;
+/* Ensure Saturday header also gets dark styling */
+.dark .fc-col-header-cell.fc-day-sat {
+    background-color: #18181b !important;
+}
+
+
+.dark .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion {
+    color: #f4f4f5 !important;
+}
+
+/* Force all day columns to have consistent dark background */
+.dark .fc-timegrid .fc-timegrid-col {
+    background-color: #18181b !important;
+}
+
+/* Override any weekend-specific styling */
+.dark .fc-day.fc-day-sat,
+.dark .fc-day.fc-day-sun {
+    background-color: #18181b !important;
 }
 
 /* Event styling */
@@ -391,15 +412,49 @@
     border-bottom-color: #ef4444 !important;
 }
 
-/* Remove today column special styling */
+/* Remove today column special styling - more specific selectors */
 .fc-day-today {
-    background-color: inherit !important;
+    background-color: #ffffff !important;
+}
+
+.dark .fc-day-today {
+    background-color: #1f2937 !important;
 }
 
 .fc-day-today .fc-col-header-cell-cushion {
-    background-color: inherit !important;
-    color: inherit !important;
-    border-radius: inherit !important;
+    background-color: transparent !important;
+    color: #18181b !important;
+}
+
+.dark .fc-day-today .fc-col-header-cell-cushion {
+    color: #f4f4f5 !important;
+}
+
+/* Ensure today's timegrid column matches other days */
+.fc-day-today.fc-timegrid-col {
+    background-color: #ffffff !important;
+}
+
+.dark .fc-day-today.fc-timegrid-col {
+    background-color: #18181b !important;
+}
+
+/* Remove any today highlighting from day grid */
+.fc-day-today.fc-daygrid-day {
+    background-color: #ffffff !important;
+}
+
+.dark .fc-day-today.fc-daygrid-day {
+    background-color: #1f2937 !important;
+}
+
+/* Override any FullCalendar default today styles */
+.fc .fc-day-today {
+    background-color: #ffffff !important;
+}
+
+.dark .fc .fc-day-today {
+    background-color: #18181b !important;
 }
 
 /* Table improvements */
@@ -419,14 +474,4 @@
 /* Improve readability */
 .fc-timegrid-slot-label-cushion {
     text-align: center !important;
-}
-
-/* Weekend styling */
-.fc-day-sat, .fc-day-sun {
-    background-color: #fafafa !important;
-}
-
-.fc-day-sat .fc-col-header-cell-cushion,
-.fc-day-sun .fc-col-header-cell-cushion {
-    color: #6b7280 !important;
 }
