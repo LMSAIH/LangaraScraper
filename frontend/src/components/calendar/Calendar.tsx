@@ -160,14 +160,9 @@ export default function Calendar({
             // If it's a ghost event, add the section
             onAddSection(section);
         } else {
-            // If it's a regular event, show confirmation and remove
-            const confirmRemove = window.confirm(
-                `Remove ${section.courseCode} (Section ${section.section}, CRN ${crn}) from your schedule?`
-            );
 
-            if (confirmRemove) {
-                onRemoveSection(crn);
-            }
+            onRemoveSection(crn);
+
         }
     }, [onAddSection, onRemoveSection]);
 
@@ -181,8 +176,8 @@ export default function Calendar({
 
         return (
             <div className={`relative h-full w-full overflow-hidden ${isGhost
-                    ? 'bg-white/90 border-2 border-dashed border-blue-400 rounded-md shadow-sm backdrop-blur-sm'
-                    : 'bg-gradient-to-br from-white/20 to-white/10 rounded-md shadow-lg backdrop-blur-sm border border-white/30'
+                ? 'bg-white/90 border-2 border-dashed border-blue-400 rounded-md shadow-sm backdrop-blur-sm'
+                : 'bg-gradient-to-br from-white/20 to-white/10 rounded-md shadow-lg backdrop-blur-sm border border-white/30'
                 }`}>
                 <div className="p-2 h-full flex flex-col">
                     {/* Header */}
@@ -193,7 +188,7 @@ export default function Calendar({
                         </div>
                         <div className={`text-xs font-medium ${isGhost ? 'text-blue-600' : 'text-white/90 drop-shadow-sm'
                             }`}>
-                            {sectionType}  
+                            {sectionType}
                         </div>
                     </div>
 
@@ -220,8 +215,8 @@ export default function Calendar({
 
                 {/* Hover effect overlay */}
                 <div className={`absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-200 ${isGhost
-                        ? 'bg-blue-50/50'
-                        : 'bg-black/20'
+                    ? 'bg-blue-50/50'
+                    : 'bg-black/20'
                     } rounded-md pointer-events-none`}></div>
             </div>
         );
@@ -243,6 +238,11 @@ export default function Calendar({
                 }}
                 eventMouseLeave={(info) => {
                     info.el.style.zIndex = '1';
+                }}
+                businessHours={{
+                    daysOfWeek: [1, 2, 3, 4, 5, 6], // Monday to Saturday
+                    startTime: '08:00',
+                    endTime: '20:30'
                 }}
                 allDaySlot={false}
                 slotDuration="00:30:00"

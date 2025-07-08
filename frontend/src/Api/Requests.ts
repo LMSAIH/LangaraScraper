@@ -26,7 +26,7 @@ const fetchSections = async (
   });
 
   if (instructor && instructor.trim()) {
-    params.append("instructor", instructor.trim());
+    params.append("instructor",instructor.trim());
   }
 
   if (subject && subject.trim()) {
