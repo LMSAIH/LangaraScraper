@@ -1,0 +1,63 @@
+import mongoose, { Schema, Document, Model } from "mongoose";
+
+export interface ICourseInfo extends Document {
+  courseCode: string;
+  title?: string;
+  description?: string;
+  attributes?: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface ICourseInfoModel extends Model<ICourseInfo> {
+  findByCourseCode(courseCode: string): Promise<ICourseInfo[]>;
+  findByAttribute(attribute: string): Promise<ICourseInfo[]>;
+}
+
+const CourseInfoSchema: Schema = new Schema(
+  {
+    courseCode: {
+      type: String,
+      required: true,
+      trim: true,
+      uppercase: true,
+      index: true,
+    },
+    title: {
+      type: String,
+      trim: true,
+    },
+    description: {
+      type: String,
+      trim: true,
+    },
+    attributes: [{
+      type: String,
+      trim: true,
+      uppercase: true,
+    }],
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes for better query performance
+CourseInfoSchema.index({ courseCode: 1}, { unique: true });
+CourseInfoSchema.index({ attributes: 1});
+
+// Static methods
+CourseInfoSchema.statics.findByCourseCode = function (courseCode: string) {
+  return this.find({ courseCode: courseCode.toUpperCase() }).sort({ courseCode: 1 });
+};
+
+CourseInfoSchema.statics.findByAttribute = function (attribute: string) {
+  return this.find({ attributes: attribute.toUpperCase() }).sort({ courseCode: 1 });
+};
+
+export const CourseInfo = mongoose.model<ICourseInfo, ICourseInfoModel>(
+  "CourseInfo",
+  CourseInfoSchema
+);
+
+export { CourseInfoSchema }; 
