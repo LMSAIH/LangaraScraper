@@ -23,7 +23,7 @@ const MeetingTimeSchema = new Schema(
     },
     sectionType: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
       enum: [
         "Lecture",
@@ -38,12 +38,16 @@ const MeetingTimeSchema = new Schema(
         "Field School",
         "On Site Work",
         "Exchange-International",
-        "Exam"
+        "Exam",
+        "Flexible Assessment",
+        "CO-OP(on site work experience)",
+        "",
+        "GIS Guided Independent Study"
       ],
     },
     days: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
     },
     time: {
