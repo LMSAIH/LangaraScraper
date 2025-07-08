@@ -32,7 +32,6 @@ const CourseSectionSchema: Schema = new Schema(
     crn: {
       type: String,
       required: true,
-      unique: true,
       index: true,
     },
     subject: {
@@ -111,7 +110,7 @@ const CourseSectionSchema: Schema = new Schema(
 
 // Indexes
 CourseSectionSchema.index({ courseCode: 1, term: 1 });
-CourseSectionSchema.index({ crn: 1, term: 1 }, { unique: true });
+CourseSectionSchema.index({ crn: 1, year:1, term: 1 }, { unique: true });
 CourseSectionSchema.index({ subject: 1, year: 1, semester: 1 });
 
 // Static methods

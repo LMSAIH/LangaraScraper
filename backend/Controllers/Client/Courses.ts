@@ -3,15 +3,7 @@ import {CourseData} from '../../Models/CourseData';
 
 const handleGetCourses = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { year, semester, subject, limit = 100, page = 1 } = req.query;
-
-    if(!year || !semester) {
-      res.status(400).json({
-        success: false,
-        error: 'Year and semester are required',
-      });
-        return;
-    }
+    const { year, semester, subject, limit = 10000, page = 1 } = req.query;
 
     // Build query
     const query: any = {};
@@ -94,4 +86,41 @@ const handleGetCourseByCode = async (req: Request, res: Response): Promise<void>
   }
 }
 
-export { handleGetCourses, handleGetCourseByCode };
+const handleGetCourseList = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { year, semester, subject } = req.query;
+
+    // Build query
+    const query: any = {};
+    if (year) query.year = Number(year);
+    if (semester) query.semester = Number(semester);
+    if (subject) query.subject = String(subject).toUpperCase();
+
+    // Get distinct course codes with high limit
+    const distinctCourseCodes = await CourseData.distinct('courseCode', query);
+
+    // Sort the course codes alphabetically
+    distinctCourseCodes.sort();
+
+    res.json({
+      success: true,
+      courseCodes: distinctCourseCodes,
+      count: distinctCourseCodes.length,
+      filters: {
+        year: year ? Number(year) : null,
+        semester: semester ? Number(semester) : null,
+        subject: subject ? String(subject).toUpperCase() : null
+      },
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error: any) {
+    console.error('Error fetching course list:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+export { handleGetCourses, handleGetCourseByCode, handleGetCourseList };

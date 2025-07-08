@@ -2,10 +2,12 @@ import { Router } from "express";
 import {
   handleGetCourses,
   handleGetCourseByCode,
+  handleGetCourseList
 } from "../../Controllers/Client/Courses";
 import {
   handleGetAllSections,
-  handleGetSectionsByCourseCode,
+  handleGetSectionsByCourseCode
+  
 } from "../../Controllers/Client/Sections";
 import {
   handleGetAllMeetings,
@@ -27,6 +29,7 @@ const router = Router();
 // Get all courses with basic filtering
 router.get("/", handleGetCourses);
 
+router.get("/courseList", handleGetCourseList);
 // Get specific course by code
 router.get("/:courseCode", handleGetCourseByCode);
 
