@@ -1,5 +1,27 @@
 import axios from "axios";
+import { Request, Response} from "express";
 import { BCTransferAgreement, BCTransferSingleAgreement, BCTransferBundleAgreement} from "../Types/ScraperTypes";
+
+const handleGetUniqueCourseTransfer = async (
+  req: Request, 
+  res: Response
+): Promise<void> => {
+  const {courseNumber, subjectCode, institutionCode } = req.query;
+  
+  if (!courseNumber || !subjectCode || !institutionCode){
+    res.status(400).json({ error: "courseNumber, subjectCode, and institutionCode are required" });
+    return;
+  }
+
+  try {
+    const transfers = await getTransfersForCourse(Number(courseNumber), String(subjectCode), String(institutionCode));
+    res.json({ transferAgreements: transfers });
+  } catch (error) {
+    console.error("error fetching transfer agreements", error);
+    res.status(500).json({ error: "Internal Server Error"});
+    return;
+  }
+};
 
 //Needs redis implementation, Note this can throw an error so it should be put into redis ASAP
 const fetchNonce = async(): Promise<string> => {
@@ -225,4 +247,4 @@ const getTransfersForCourse = async(courseNumber: number, subjectCode: string, i
   }
 }
 
-export { getTransfersForCourse };
+export { handleGetUniqueCourseTransfer };
