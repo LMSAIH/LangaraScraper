@@ -175,11 +175,11 @@ export default function Calendar({
         const crn = eventInfo.event.extendedProps.crn;
 
         return (
-            <div className={`relative h-full w-full overflow-hidden ${isGhost
+            <div className={`relative h-full w-full overflow-hidden p-2 ${isGhost
                 ? 'bg-white/90 border-2 border-dashed border-blue-400 rounded-md shadow-sm backdrop-blur-sm'
                 : 'bg-gradient-to-br from-white/20 to-white/10 rounded-md shadow-lg backdrop-blur-sm border border-white/30'
                 }`}>
-                <div className="p-2 h-full flex flex-col">
+                <div className=" h-full flex flex-col">
                     {/* Header */}
                     <div className="flex-shrink-0">
                         <div className={`font-bold text-sm leading-tight ${isGhost ? 'text-blue-700' : 'text-white drop-shadow-sm'
