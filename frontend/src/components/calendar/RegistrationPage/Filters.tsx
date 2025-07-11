@@ -91,8 +91,7 @@ const Filters = ({
         <div className="flex gap-2">
           {onOpenSaveModal && (
             <button
-              onClick={onOpenSaveModal}
-              disabled={addedSections.length === 0}
+              onClick={onOpenSaveModal}            
               className='px-3 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:hover:bg-gray-400 text-white rounded-xl font-semibold text-sm transition-all duration-200 transform hover:cursor-pointer shadow-sm hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:transform-none'
               title={`Save Schedule (${addedSections.length} courses)`}
             >
