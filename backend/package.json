@@ -7,10 +7,9 @@
   "main": "server.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "nodemon --exec ts-node server.ts",
-    "server": "npm run build && nodemon server.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "test-scraper": "ts-node Test/TestScrapper.ts"
+    "dev": "tsx watch server.ts",
+    "server": "npm run build && node dist/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
@@ -27,6 +26,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.6.0",
     "express": "^5.1.0",
+    "express-rate-limit": "^7.5.1",
     "mongodb": "^6.17.0",
     "mongoose": "^8.16.1",
     "morgan": "^1.10.0",
@@ -34,6 +34,7 @@
     "puppeteer": "^24.10.2",
     "response-time": "^2.3.3",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   }
 }
