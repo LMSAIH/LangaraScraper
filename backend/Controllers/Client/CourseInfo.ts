@@ -7,6 +7,7 @@ import { getCurrentSemester } from "../../Utils/Scraper/ScraperUtils";
 const handleGetAllCoursesInfo = async (req: Request, res: Response) => {
     try {
         let { startYear, startSemester, endYear, endSemester } = req.query; //all might be optional depending on the user's request
+        const { saveToDB } = req.body;
 
         //checking if all four parameters are provided
         const params = [startYear, startSemester, endYear, endSemester];
@@ -36,6 +37,12 @@ const handleGetAllCoursesInfo = async (req: Request, res: Response) => {
     if(!courseInfo) {
         res.status(404).json({ error: "Course info not found" });
         return;
+    }
+
+    if(saveToDB) {
+        const courseInfoToInsert = await getCourseInfo(Number(startYear), Number(startSemester), Number(endYear), Number(endSemester));
+        const courseInfo = await CourseInfo.insertMany(courseInfoToInsert);
+        console.log(`Inserted: ${courseInfo.length} course info`);
     }
 
     res.json(courseInfo);
