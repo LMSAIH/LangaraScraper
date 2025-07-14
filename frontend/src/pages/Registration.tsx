@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import Calendar from '../components/calendar/Calendar';
 import Filters from '../components/calendar/RegistrationPage/Filters';
 import SectionList from '../components/calendar/RegistrationPage/SectionList'
+import SavedScheduleModal from '../components/SavedScheduleModal';
 import type { Section, ApiResponse } from '../Types/Registration';
 import { fetchSubjects, fetchSections, fetchTerms } from '../Api/Requests';
 import {
     getCourseStatus,
     createSectionHandlers
 } from '../Utils/RegistrationUtils';
+import { ICSExporter } from '../Utils/ICSExport';
 import { FaCaretLeft, FaCaretRight } from 'react-icons/fa';
 
 const Registration = () => {
@@ -30,6 +32,7 @@ const Registration = () => {
     const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null);
     const [terms, setTerms] = useState<string[]>([]);
     const [term, setTerm] = useState<string>('');
+    const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
 
     const [yearFilter, setYearFilter] = useState<number>(2025);
     const [semesterFilter, setSemesterFilter] = useState<number>(30);
@@ -43,7 +46,7 @@ const Registration = () => {
                 throw new Error('No terms available');
             }
 
-            setTerms(terms);
+            setTerms(terms.slice(terms.length - 3));
             setTerm(terms[terms.length - 1]);
 
         } catch (error) {
@@ -141,8 +144,25 @@ const Registration = () => {
         setSelectedSection,
         setHoveredSection,
         setAddedSections,
-        addedSections,
+        addedSections
     );
+
+    // Save schedule handlers
+    const handleOpenSaveModal = () => {
+        setIsSaveModalOpen(true);
+    };
+
+    const handleCloseSaveModal = () => {
+        setIsSaveModalOpen(false);
+    };
+
+    const handleLoadSchedule = (sections: Section[]) => {
+        setAddedSections(sections);
+    };
+
+    const handleExportICS = () => {
+        ICSExporter.exportToICS(addedSections, term);
+    };
 
     // Create search handlers directly
     const handleSearch = () => {
@@ -203,6 +223,10 @@ const Registration = () => {
                                 setError={setError}
                                 onSearch={handleSearch}
                                 onClearFilters={handleClearFilters}
+                                addedSections={addedSections}
+                                currentTerm={term}
+                                onOpenSaveModal={handleOpenSaveModal}
+                                onExportICS={handleExportICS}
                             />
                         </div>
 
@@ -371,27 +395,38 @@ const Registration = () => {
                     {/* Right Side - Calendar */}
                     <div className="  animate-slide-up w-full lg:w-2/3 self-start" style={{ animationDelay: '0.1s' }}>
                         <div className=" rounded-2xl bg-white dark:bg-zinc-800 shadow-sm border border-gray-200 dark:border-zinc-700 transition-all duration-300 hover:shadow-md overflow-hidden h-full flex flex-col">
-                            <div className="p-6 border-b border-gray-200 dark:border-zinc-700">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">                                        Your Schedule
-                                    </h3>
-                                    <div className="flex items-center space-x-3">
-                                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                                            <span className="font-medium">{addedSections.length}</span> courses selected
+                            <div className="p-2 border-b border-gray-200 dark:border-zinc-700">
+                                <div className="flex items-start justify-between gap-4">
+                                    {/* Selected Courses List */}
+                                    {addedSections.length > 0 && (
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex flex-wrap gap-2 justify-start">
+                                                {addedSections.map((section) => (
+                                                    <div
+                                                        key={section.crn}
+                                                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-lg text-sm transition-all duration-200 hover:bg-blue-200 dark:hover:bg-blue-900/50 group"
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium leading-tight">{section.courseCode}</span>
+                                                            <span className="text-xs text-blue-600 dark:text-blue-300 leading-tight">CRN: {section.crn}</span>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handleRemoveSection(section.crn)}
+                                                            className="flex-shrink-0 w-4 h-4 rounded-full bg-blue-200 dark:bg-blue-800 hover:bg-red-200 dark:hover:bg-red-800 text-blue-600 dark:text-blue-300 hover:text-red-600 dark:hover:text-red-300 transition-all duration-200 flex items-center justify-center"
+                                                            title={`Remove ${section.courseCode}`}
+                                                        >
+                                                            <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div className="flex space-x-1">
-                                            {[...Array(Math.min(3, addedSections.length))].map((_, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="w-2 h-2 bg-green-500 rounded-full animate-pulse"
-                                                    style={{ animationDelay: `${i * 0.2}s` }}
-                                                ></div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
-                            <div className="flex-1 p-6 overflow-auto">
+                            <div className="flex-1 p-4 pb-6 overflow-auto">
                                 <Calendar
                                     selectedSection={selectedSection}
                                     hoveredSection={hoveredSection}
@@ -404,6 +439,15 @@ const Registration = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Save Schedule Modal */}
+            <SavedScheduleModal
+                isOpen={isSaveModalOpen}
+                onClose={handleCloseSaveModal}
+                currentSections={addedSections}
+                currentTerm={term}
+                onLoadSchedule={handleLoadSchedule}
+            />
         </div>
     );
 };

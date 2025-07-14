@@ -4,6 +4,7 @@ import { handleGetCourses } from "../Controllers/CourseScraper";
 export class CourseScheduler {
   private static instance: CourseScheduler;
   private task: cron.ScheduledTask | null = null;
+  private isRunning: boolean = false;
 
   private constructor() {}
 
@@ -20,14 +21,20 @@ export class CourseScheduler {
       return;
     }
 
-    // Run every hour
-    this.task = cron.schedule('0 * * * *', async () => {
+    // Define the scraper function to avoid duplication
+    const runScraper = async () => {
+      // Prevent multiple scraper instances running simultaneously
+      if (this.isRunning) {
+        console.log(`[${new Date().toISOString()}] ⚠️ Scraper already running, skipping this run`);
+        return;
+      }
+
       try {
-        console.log(`[${new Date().toISOString()}] Running scheduled course scraper...`);
+        this.isRunning = true;
+        console.log(`[${new Date().toISOString()}] 🚀 Starting scheduled course scraper...`);
         
         const mockReq = {
           body: {
-            // Add any default parameters your scraper needs
             year: new Date().getFullYear(),
             semester: this.getCurrentSemester()
           },
@@ -39,18 +46,18 @@ export class CourseScheduler {
           json: (data: any) => {
             const timestamp = new Date().toISOString();
             if (data.success) {
-              console.log(`[${timestamp}] ✅ Scheduled scraper completed successfully`);
+              console.log(`[${timestamp}] Scheduled scraper completed successfully`);
               if (data.coursesScraped) {
-                console.log(`[${timestamp}] 📚 Scraped ${data.coursesScraped} courses`);
+                console.log(`[${timestamp}]  Scraped ${data.coursesScraped} courses`);
               }
             } else {
-              console.log(`[${timestamp}] ❌ Scheduled scraper failed:`, data.error);
+              console.log(`[${timestamp}]  Scheduled scraper failed:`, data.error);
             }
           },
           status: (code: number) => ({
             json: (data: any) => {
               const timestamp = new Date().toISOString();
-              console.log(`[${timestamp}] ❌ Scheduled scraper failed with status ${code}:`, data);
+              console.log(`[${timestamp}]  Scheduled scraper failed with status ${code}:`, data);
             }
           })
         } as any;
@@ -59,20 +66,42 @@ export class CourseScheduler {
         
       } catch (error) {
         const timestamp = new Date().toISOString();
-        console.error(`[${timestamp}] 💥 Error in scheduled course scraper:`, error);
+        console.error(`[${timestamp}]  Error in scheduled course scraper:`, error);
+      } finally {
+        this.isRunning = false;
+        console.log(`[${new Date().toISOString()}] 🏁 Scraper run completed`);
       }
-    }, {
+    };
+
+    // Run immediately on start
+    runScraper();
+
+    // Schedule to run every hour
+    this.task = cron.schedule('0 * * * *', runScraper, {
       timezone: "America/Vancouver"
     });
 
+    console.log('Course scheduler started - will run every hour');
   }
 
   public stop(): void {
     if (this.task) {
       this.task.stop();
+      this.task.destroy();
       this.task = null;
-      console.log('⏹️ Course scheduler stopped');
+      console.log('Course scheduler stopped');
     }
+    
+    // Reset running state
+    this.isRunning = false;
+  }
+
+  public isSchedulerRunning(): boolean {
+    return this.task !== null;
+  }
+
+  public isScraperCurrentlyRunning(): boolean {
+    return this.isRunning;
   }
 
   private getCurrentSemester(): number {
