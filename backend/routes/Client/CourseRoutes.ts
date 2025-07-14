@@ -2,10 +2,12 @@ import { Router } from "express";
 import {
   handleGetCourses,
   handleGetCourseByCode,
+  handleGetCourseList
 } from "../../Controllers/Client/Courses";
 import {
   handleGetAllSections,
-  handleGetSectionsByCourseCode,
+  handleGetSectionsByCourseCode
+  
 } from "../../Controllers/Client/Sections";
 import {
   handleGetAllMeetings,
@@ -22,10 +24,17 @@ import {
   handleGetMetaInstructors,
   handleGetMetaTerms
 } from "../../Controllers/Client/Metadata";
+import {
+  handleGetAllCoursesInfo,
+  handleGetCourseInfoByCode
+} from "../../Controllers/Client/CourseInfo";
 const router = Router();
 
 // Get all courses with basic filtering
 router.get("/", handleGetCourses);
+
+// Get course list with filters
+router.get("/courseList", handleGetCourseList);
 
 // Get specific course by code
 router.get("/:courseCode", handleGetCourseByCode);
@@ -38,6 +47,12 @@ router.get("/:courseCode/sections", handleGetSectionsByCourseCode);
 
 // Get all meeting times with filtering
 router.get("/meetings/all", handleGetAllMeetings);
+
+//Get course info for all courses since 1999
+router.get("/courseInfo/all", handleGetAllCoursesInfo);
+
+//Get course info for a specific course
+router.get("/courseInfo/:courseCode", handleGetCourseInfoByCode);
 
 // Get meeting times for a specific section
 router.get("/sections/:crn/meetings", handleGetMeetingTimesBySectionCRN);
@@ -62,5 +77,6 @@ router.get("/sections/meetings/all", handleGetAggregatedCourseDataSectionAndMeet
 
 // Get sections and meetings without course data (better performance)
 router.get("/sections/meetings/", handleGetAggregatedSectionsAndMeetings)
+
 
 export { router };

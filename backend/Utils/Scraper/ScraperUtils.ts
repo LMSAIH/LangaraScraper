@@ -218,6 +218,12 @@ const parseCourseData = (html: string): CourseData[] => {
   return courses;
 };
 
+// Gets the current semmester 
+const getCurrentSemester = (month: number): number => {
+  if (month >= 1 && month <= 4) return 10; // Spring
+  if (month >= 5 && month <= 8) return 20; // Summer
+  if (month >= 9 && month <= 12) return 30; // Fall
+  return 0;
+};
 
-
-export { getSubjects, getCourses, parseCourseData };
+export { getSubjects, getCourses, parseCourseData, getCurrentSemester };

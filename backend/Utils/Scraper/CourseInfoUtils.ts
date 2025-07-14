@@ -1,9 +1,8 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import { CourseInfo } from "../../Models/CourseInfo";
-import { getCourses, getSubjects } from "./ScraperUtils";
-import { CourseInfo as CourseInfoModel, ICourseInfo } from "../../Models/CourseInfo";
+import { ICourseInfo } from "../../Models/CourseInfo";
 import { CourseAttribute, CourseDescription } from "../../Types/ScraperTypes";
+import { CourseData } from "../../Models/CourseData";
 
 const getAttributes = async () : Promise<CourseAttribute[]> => {
     const url = "https://swing.langara.bc.ca/prod/hzgkcald.P_DispCrseAttr";
@@ -44,44 +43,37 @@ const getAttributes = async () : Promise<CourseAttribute[]> => {
 
 }
 
-const getCourseDescription = async (year: number , semester: number) => {
+const getCourseDescription = async (startYear: number, startSemester: number, endYear: number, endSemester: number) => {
     try {
-        // Get all subjects first
-        const subjects = await getSubjects(year, semester);
-        
-        // Use the existing getCourses function to get course data
-        const courseDataHtml = await getCourses(year, semester, subjects);
-        const $ = cheerio.load(courseDataHtml);
-        
+        const courseCodes = await CourseData.distinct('courseCode', { year: { $gte: startYear, $lte: endYear}, semester: { $gte: startSemester, $lte: endSemester} });
+        console.log("Got course codes", courseCodes.length);
         const courseDescriptions: CourseDescription[] = [];
-        const allCourseCodes: string[] = [];
-
-        // Extract course codes from the course header rows
-        $("table.dataentrytable tr").each((index, row) => {
-            const $row = $(row);
-            const courseHeaderCell = $row.find('td[colspan="19"].dedefault b');
-            
-            if (courseHeaderCell.length > 0) {
-                const courseCode = courseHeaderCell.text().trim();
-                
-                if (courseCode && /^[A-Z]{2,4}\s\d{4}$/.test(courseCode)) {
-                    allCourseCodes.push(courseCode);
-                }
-            }
-        });
-        console.log("Got course codes", allCourseCodes.length);
         // For each course code, navigate to the individual course page
-        for (const courseCode of allCourseCodes) {
+        for (const courseCode of courseCodes) {
             const [subject, courseNumber] = courseCode.split(" ");
             const courseUrl = `https://langara.ca/programs-courses/${subject}-${courseNumber}`;
             
             try {
-              const courseResponse = await axios.get(courseUrl);
+              let courseResponse = null;
+              try {
+                courseResponse = await axios.get(courseUrl);
+              } catch (error: any) {
+                if(error.response.status === 404) {
+                  courseDescriptions.push({
+                    courseCode: courseCode,
+                    title: "Course not found",
+                    description: "This course is no longer offered."
+                  });
+                  continue;
+                }
+              }
+              if(!courseResponse) {
+                continue;
+              }
               const $course = cheerio.load(courseResponse.data);
               
-              const title = $course('h1').text().trim();
-
-              const description = $course(".field--name-field-description .field__item").text().trim();
+              let title = $course('h1').text().trim();
+              let description = $course(".field--name-field-description .field__item").text().trim();
 
               courseDescriptions.push({
                   courseCode: courseCode,
@@ -89,7 +81,7 @@ const getCourseDescription = async (year: number , semester: number) => {
                   description: description
               });
                 
-            } catch (error) {
+            } catch (error) {                
                 console.error(`Error fetching description for ${courseCode}:`, error);
                 throw new Error(`Failed to fetch description for ${courseCode}`);
             }
@@ -101,11 +93,12 @@ const getCourseDescription = async (year: number , semester: number) => {
     }
 };
 
-// Merge course descriptions and attributes into CourseInfo objects
-const getCourseInfo = async (year: number, semester: number): Promise<ICourseInfo[]> => {
+// Merge course descriptions and attributes into CourseInfo objects from a specidic date 
+const getCourseInfo = async (startYear: number, startSemester: number, endYear: number, endSemester: number): Promise<ICourseInfo[]> => {
     // Get descriptions and attributes
+
     const [descriptions, attributes] = await Promise.all([
-        getCourseDescription(year, semester),
+        getCourseDescription(startYear, startSemester, endYear, endSemester),
         getAttributes()
     ]);
 

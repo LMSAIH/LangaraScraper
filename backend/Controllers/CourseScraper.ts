@@ -206,4 +206,147 @@ const handleSaveToDB = async (
   }
 };
 
-export { handleGetSubjects, handleGetCourses };
+const handleGetAllHistoricalCourses = async (req: Request, res: Response): Promise<void> => {
+  const { saveToDb = false } = req.body;
+
+  try {
+    const startYear = 1999;
+    const startSemester = 20; // Summer 1999
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    
+    // Determine current semester based on month
+    let currentSemester: number;
+    const month = currentDate.getMonth() + 1; // getMonth() is 0-indexed
+    
+    if (month >= 1 && month <= 4) {
+      currentSemester = 10; // Spring
+    } else if (month >= 5 && month <= 8) {
+      currentSemester = 20; // Summer
+    } else {
+      currentSemester = 30; // Fall
+    }
+
+    console.log(`Starting historical scrape from ${startYear}/${startSemester} to ${currentYear}/${currentSemester}`);
+
+    const allCourseData: CourseData[] = [];
+    const scrapingResults = [];
+    let totalProcessed = 0;
+    let totalErrors = 0;
+
+    // Generate all year/semester combinations
+    for (let year = startYear; year <= currentYear; year++) {
+      const semesters = year === currentYear 
+        ? getCurrentSemester(currentSemester)
+        : [10, 20, 30]; // Spring, Summer, Fall
+      
+      for (const semester of semesters) {
+        // Skip if before start point
+        if (year === startYear && semester < startSemester) {
+          continue;
+        }
+
+        try {
+          console.log(`Scraping ${year}/${semester}...`);
+          
+          const subjects = await getSubjects(year, semester);
+          
+          // Skip if no subjects found (likely semester doesn't exist)
+          if (!subjects || subjects.length === 0) {
+            console.log(`No subjects found for ${year}/${semester}, skipping...`);
+            continue;
+          }
+
+          const coursesHtml = await getCourses(year, semester, subjects);
+          const courseData = parseCourseData(coursesHtml);
+
+          // Add to accumulated data
+          allCourseData.push(...courseData);
+
+          // Save to database if requested
+          if (saveToDb) {
+            await handleSaveToDB(year, semester, courseData);
+          }
+
+          const totalSections = courseData.reduce((sum, course) => sum + course.sections.length, 0);
+          const totalMeetingTimes = courseData.reduce(
+            (sum, course) =>
+              sum + course.sections.reduce((sectionSum, section) => sectionSum + section.data.length, 0),
+            0
+          );
+
+          scrapingResults.push({
+            year,
+            semester,
+            success: true,
+            totalCourses: courseData.length,
+            totalSections,
+            totalMeetingTimes,
+          });
+
+          totalProcessed++;
+          console.log(`✅ Completed ${year}/${semester}: ${courseData.length} courses, ${totalSections} sections`);
+
+          // Add delay to avoid overwhelming the server
+          await new Promise(resolve => setTimeout(resolve, 2000));
+
+        } catch (error: any) {
+          console.error(`❌ Error scraping ${year}/${semester}:`, error.message);
+          totalErrors++;
+          
+          scrapingResults.push({
+            year,
+            semester,
+            success: false,
+            error: error.message,
+          });
+        }
+      }
+    }
+
+    // Calculate final totals
+    const totalCourses = allCourseData.length;
+    const totalSections = allCourseData.reduce((sum, course) => sum + course.sections.length, 0);
+    const totalMeetingTimes = allCourseData.reduce(
+      (sum, course) =>
+        sum + course.sections.reduce((sectionSum, section) => sectionSum + section.data.length, 0),
+      0
+    );
+
+    const response = {
+      success: true,
+      message: `Historical scraping completed from ${startYear}/${startSemester} to ${currentYear}/${currentSemester}`,
+      summary: {
+        periodsProcessed: totalProcessed,
+        periodsWithErrors: totalErrors,
+        totalCourses,
+        totalSections,
+        totalMeetingTimes,
+      },
+      details: scrapingResults,
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log(`🎉 Historical scraping completed! Processed ${totalProcessed} periods with ${totalErrors} errors.`);
+    res.json(response);
+
+  } catch (error: any) {
+    console.error("Error in historical scraping:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: error.message,
+    });
+  }
+};
+
+// Helper function to get semesters up to current
+const getCurrentSemester = (currentSemester: number): number[] => {
+  const semesters = [];
+  if (currentSemester >= 10) semesters.push(10); // Spring
+  if (currentSemester >= 20) semesters.push(20); // Summer
+  if (currentSemester >= 30) semesters.push(30); // Fall
+  return semesters;
+};
+
+// Export the new function
+export { handleGetSubjects, handleGetCourses, handleGetAllHistoricalCourses};

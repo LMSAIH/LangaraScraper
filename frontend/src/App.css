@@ -1,53 +1,309 @@
 @import 'tailwindcss';
 
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
 /* Calendar container styling */
 .fc {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+/* Dark mode calendar styles */
+.dark .fc {
+    color: #f4f4f5;
+}
+
+.dark .fc-theme-standard .fc-scrollgrid {
+    border-color: #3f3f46;
+}
+
+.dark .fc-theme-standard td,
+.dark .fc-theme-standard th {
+    border-color: #3f3f46;
+}
+
 /* Time grid improvements */
 .fc-timegrid-slot {
-    height: 30px !important; /* Taller time slots */
+    height: 32px !important;
     border-bottom: 1px solid #e5e7eb !important;
+}
+
+.dark .fc-timegrid-slot {
+    border-bottom-color: #3f3f46 !important;
 }
 
 .fc-timegrid-slot-minor {
     border-bottom: 1px dashed #f3f4f6 !important;
 }
 
+.dark .fc-timegrid-slot-minor {
+    border-bottom-color: #27272a !important;
+}
+
 /* Time labels styling */
 .fc-timegrid-axis {
-    background-color: #f9fafb !important;
+    background-color: #f8fafc !important;
     border-right: 2px solid #e5e7eb !important;
-    width: 60px !important; /* Smaller time column */
+    width: 65px !important;
+}
+
+.dark .fc-timegrid-axis {
+    background-color: #18181b !important;
+    border-right-color: #3f3f46 !important;
 }
 
 .fc-timegrid-slot-label {
-    font-size: 11px !important; /* Smaller font */
+    font-size: 12px !important;
     font-weight: 500 !important;
     color: #6b7280 !important;
-    padding: 6px !important; /* Reduced padding */
+    padding: 8px !important;
+}
+
+.dark .fc-timegrid-slot-label {
+    color: #9ca3af !important;
 }
 
 /* Day headers */
 .fc-col-header {
     background-color: #f8fafc !important;
     border-bottom: 2px solid #e2e8f0 !important;
-    padding: 12px 0 !important; /* Reduced padding */
+    padding: 14px 0 !important;
+}
+
+.dark .fc-col-header {
+    background-color: #18181b !important;
+    border-bottom-color: #3f3f46 !important;
 }
 
 .fc-col-header-cell {
     border-right: 1px solid #e5e7eb !important;
 }
 
+.dark .fc-col-header-cell {
+    border-right-color: #18181b !important;
+}
+
 .fc-col-header-cell-cushion {
     font-weight: 600 !important;
     color: #1f2937 !important;
-    font-size: 13px !important; /* Smaller font */
-    padding: 8px !important; /* Reduced padding */
+    font-size: 14px !important;
+    padding: 10px !important;
+}
+
+.dark .fc-col-header-cell-cushion {
+    color: #f4f4f5 !important;
+    
 }
 
 /* Day columns */
+.fc-daygrid-day, .fc-timegrid-col {
+    background-color: #ffffff !important;
+}
+
+.dark .fc-daygrid-day, 
+.dark .fc-timegrid-col {
+    background-color: #18181b !important;
+}
+
+/* More specific selectors for all day columns including Saturday */
+.dark .fc-timegrid-col,
+.dark .fc-daygrid-day,
+.dark .fc-timegrid-col.fc-day-sat,
+.dark .fc-daygrid-day.fc-day-sat {
+    background-color: #18181b !important;
+}
+
+/* Ensure Saturday header also gets dark styling */
+.dark .fc-col-header-cell.fc-day-sat {
+    background-color: #18181b !important;
+}
+
+
+.dark .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion {
+    color: #f4f4f5 !important;
+}
+
+/* Force all day columns to have consistent dark background */
+.dark .fc-timegrid .fc-timegrid-col {
+    background-color: #18181b !important;
+}
+
+/* Override any weekend-specific styling */
+.dark .fc-day.fc-day-sat,
+.dark .fc-day.fc-day-sun {
+    background-color: #18181b !important;
+}
+
+/* Event styling */
+.fc-event {
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 4px 8px !important;
+    margin: 1px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease !important;
+}
+
+.fc-event:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.fc-event-title {
+    font-weight: 600 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.fc-event-time {
+    font-size: 10px !important;
+    opacity: 0.9 !important;
+}
+
+/* Regular course events */
+.fc-event.regular-course {
+    background-color: #3b82f6 !important;
+    color: white !important;
+}
+
+/* Hovered course events */
+.fc-event.hovered-course {
+    background-color: #8b5cf6 !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3) !important;
+}
+
+/* Selected course events */
+.fc-event.selected-course {
+    background-color: #10b981 !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Online/TBA course events */
+.fc-event.online-tba-course {
+    background-color: #f59e0b !important;
+    color: white !important;
+}
+
+/* Cancelled course events */
+.fc-event.cancelled-course {
+    background-color: #ef4444 !important;
+    color: white !important;
+    opacity: 0.7 !important;
+}
+
+/* Toolbar styling */
+.fc-toolbar {
+    margin-bottom: 20px !important;
+}
+
+.fc-toolbar-title {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    color: #1f2937 !important;
+}
+
+.dark .fc-toolbar-title {
+    color: #f4f4f5 !important;
+}
+
+.fc-button {
+    background-color: #f3f4f6 !important;
+    border: 1px solid #d1d5db !important;
+    color: #374151 !important;
+    border-radius: 8px !important;
+    padding: 8px 16px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+}
+
+.dark .fc-button {
+    background-color: #3f3f46 !important;
+    border-color: #52525b !important;
+    color: #f4f4f5 !important;
+}
+
+.fc-button:hover {
+    background-color: #e5e7eb !important;
+    border-color: #9ca3af !important;
+    transform: translateY(-1px) !important;
+}
+
+.dark .fc-button:hover {
+    background-color: #52525b !important;
+    border-color: #6b7280 !important;
+}
+
+.fc-button-primary {
+    background-color: #3b82f6 !important;
+    border-color: #2563eb !important;
+    color: white !important;
+}
+
+.fc-button-primary:hover {
+    background-color: #2563eb !important;
+    border-color: #1d4ed8 !important;
+}
+
+.fc-button-active {
+    background-color: #3b82f6 !important;
+    border-color: #2563eb !important;
+    color: white !important;
+}
+
+/* Remove default focus styles and add custom ones */
+.fc-button:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Smooth animations */
+* {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Loading animation */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
 .fc-timegrid-col {
     border-right: 1px solid #e5e7eb !important;
     background-color: #ffffff !important;
@@ -156,15 +412,49 @@
     border-bottom-color: #ef4444 !important;
 }
 
-/* Remove today column special styling */
+/* Remove today column special styling - more specific selectors */
 .fc-day-today {
-    background-color: inherit !important;
+    background-color: #ffffff !important;
+}
+
+.dark .fc-day-today {
+    background-color: #1f2937 !important;
 }
 
 .fc-day-today .fc-col-header-cell-cushion {
-    background-color: inherit !important;
-    color: inherit !important;
-    border-radius: inherit !important;
+    background-color: transparent !important;
+    color: #18181b !important;
+}
+
+.dark .fc-day-today .fc-col-header-cell-cushion {
+    color: #f4f4f5 !important;
+}
+
+/* Ensure today's timegrid column matches other days */
+.fc-day-today.fc-timegrid-col {
+    background-color: #ffffff !important;
+}
+
+.dark .fc-day-today.fc-timegrid-col {
+    background-color: #18181b !important;
+}
+
+/* Remove any today highlighting from day grid */
+.fc-day-today.fc-daygrid-day {
+    background-color: #ffffff !important;
+}
+
+.dark .fc-day-today.fc-daygrid-day {
+    background-color: #1f2937 !important;
+}
+
+/* Override any FullCalendar default today styles */
+.fc .fc-day-today {
+    background-color: #ffffff !important;
+}
+
+.dark .fc .fc-day-today {
+    background-color: #18181b !important;
 }
 
 /* Table improvements */
@@ -184,14 +474,4 @@
 /* Improve readability */
 .fc-timegrid-slot-label-cushion {
     text-align: center !important;
-}
-
-/* Weekend styling */
-.fc-day-sat, .fc-day-sun {
-    background-color: #fafafa !important;
-}
-
-.fc-day-sat .fc-col-header-cell-cushion,
-.fc-day-sun .fc-col-header-cell-cushion {
-    color: #6b7280 !important;
 }
