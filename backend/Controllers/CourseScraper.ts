@@ -216,8 +216,8 @@ const handleGetAllHistoricalCourses = async (req: Request, res: Response): Promi
     const currentYear = currentDate.getFullYear();
     
     // Determine current semester based on month
-    let currentSemester: number;
     const month = currentDate.getMonth() + 1; // getMonth() is 0-indexed
+    let currentSemester: number;
     
     if (month >= 1 && month <= 4) {
       currentSemester = 10; // Spring
