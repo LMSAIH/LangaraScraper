@@ -4,10 +4,12 @@ import {
   getCourses,
   parseCourseData,
 } from "../Utils/Scraper/ScraperUtils";
-import { CourseData } from "../Types/ScraperTypes";
+import { CourseData, ICourseInfo } from "../Types/ScraperTypes";
 import { CourseData as DBCourseData } from "../Models/CourseData";
 import { CourseSection } from "../Models/CourseSection";
 import { MeetingTime } from "../Models/MeetingTime";
+import { CourseInfo } from "../Models/CourseInfo";
+import { getCourseInfo, getCurrentSemester } from "../Utils/Scraper/CourseInfoUtils";
 import mongoose from "mongoose";
 
 const handleGetSubjects = async (
@@ -212,20 +214,9 @@ const handleGetAllHistoricalCourses = async (req: Request, res: Response): Promi
   try {
     const startYear = 1999;
     const startSemester = 20; // Summer 1999
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    
-    // Determine current semester based on month
-    const month = currentDate.getMonth() + 1; // getMonth() is 0-indexed
-    let currentSemester: number;
-    
-    if (month >= 1 && month <= 4) {
-      currentSemester = 10; // Spring
-    } else if (month >= 5 && month <= 8) {
-      currentSemester = 20; // Summer
-    } else {
-      currentSemester = 30; // Fall
-    }
+
+    const currentYear = new Date().getFullYear();
+    const currentSemester = getCurrentSemester();
 
     console.log(`Starting historical scrape from ${startYear}/${startSemester} to ${currentYear}/${currentSemester}`);
 
@@ -237,7 +228,7 @@ const handleGetAllHistoricalCourses = async (req: Request, res: Response): Promi
     // Generate all year/semester combinations
     for (let year = startYear; year <= currentYear; year++) {
       const semesters = year === currentYear 
-        ? getCurrentSemester(currentSemester)
+        ? getCurrentSemesters(currentSemester)
         : [10, 20, 30]; // Spring, Summer, Fall
       
       for (const semester of semesters) {
@@ -340,7 +331,7 @@ const handleGetAllHistoricalCourses = async (req: Request, res: Response): Promi
 };
 
 // Helper function to get semesters up to current
-const getCurrentSemester = (currentSemester: number): number[] => {
+const getCurrentSemesters = (currentSemester: number): number[] => {
   const semesters = [];
   if (currentSemester >= 10) semesters.push(10); // Spring
   if (currentSemester >= 20) semesters.push(20); // Summer
@@ -348,5 +339,71 @@ const getCurrentSemester = (currentSemester: number): number[] => {
   return semesters;
 };
 
+const handleGetCourseInfo = async (req: Request, res: Response): Promise<void> => {
+  const { startYear, startSemester, saveToDb = false } = req.query;
+
+  const currentYear = new Date().getFullYear();
+  const currentSemester = getCurrentSemester();
+
+  if (!startYear || !startSemester) {
+    res.status(400).json({ error: "Start year and start semester are required" });
+    return;
+  }
+  try {
+    const courseInfo = await getCourseInfo(Number(startYear), Number(startSemester), Number(currentYear), Number(currentSemester));
+
+    if(saveToDb) {
+      await handleSaveToDBCourseInfo(Number(startYear), Number(startSemester), Number(currentYear), Number(currentSemester), courseInfo);
+    }
+    const response = {
+      success: true,
+      startYear: Number(startYear),
+      startSemester: Number(startSemester),
+      scraped: {
+        totalCourses: courseInfo.length,
+        courses: courseInfo,
+      },
+      timestamp: new Date().toISOString(),
+    }
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error getting course info:', error);
+    res.status(500).json({ error: 'Failed to get course info' });
+  }
+}
+
+const handleSaveToDBCourseInfo = async (startYear: number, startSemester: number, currentYear: number, currentSemester: number, data: ICourseInfo[]) => {
+  const session = await mongoose.startSession();
+
+  try {
+    await session.withTransaction(async () => {
+
+      const courseInfoDelete = await CourseInfo.deleteMany({ year: { $gte: startYear, $lte: currentYear }, semester: { $gte: startSemester, $lte: currentSemester } });
+
+      let courseInfoToInsert: ICourseInfo[] = [];
+
+      for(const course of data) {
+        courseInfoToInsert.push({
+          courseCode: course.courseCode,
+          title: course.title,
+          description: course.description,
+          updatedAt: new Date(),
+        });
+      }
+      const courseInfo = await CourseInfo.insertMany(courseInfoToInsert);
+
+      console.log(`Deleted: ${courseInfoDelete.deletedCount} course info`);
+      console.log(`Inserted: ${courseInfo.length} course info`);
+    });
+  
+  } catch (error) {
+    console.error('Error saving course info:', error);
+    throw new Error('Failed to save course info');
+  } finally {
+    await session.endSession();
+  }
+}
+
 // Export the new function
-export { handleGetSubjects, handleGetCourses, handleGetAllHistoricalCourses};
+export { handleGetSubjects, handleGetCourses, handleGetAllHistoricalCourses, handleGetCourseInfo};

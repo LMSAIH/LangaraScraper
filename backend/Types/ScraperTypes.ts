@@ -71,3 +71,11 @@ export interface CourseDescription {
   title?: string;
   description?: string;
 }
+
+export interface ICourseInfo {
+  courseCode: string;
+  title: string;
+  description?: string;
+  attributes?: string[];
+  updatedAt: Date;
+}

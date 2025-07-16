@@ -1,8 +1,8 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface ICourseInfo extends Document {
   courseCode: string;
-  title?: string;
+  title: string;
   description?: string;
   attributes?: string[];
   updatedAt: Date;
@@ -14,8 +14,7 @@ const CourseInfoSchema: Schema = new Schema(
       type: String,
       required: true,
       trim: true,
-      uppercase: true,
-      index: true,
+      uppercase: true
     },
     title: {
       type: String,

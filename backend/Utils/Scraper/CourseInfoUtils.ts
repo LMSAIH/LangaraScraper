@@ -43,9 +43,11 @@ const getAttributes = async () : Promise<CourseAttribute[]> => {
 
 }
 
-const getCourseDescription = async (startYear: number, startSemester: number, endYear: number, endSemester: number) => {
+const getCourseDescription = async (startYear: number, startSemester: number) => {
     try {
-        const courseCodes = await CourseData.distinct('courseCode', { year: { $gte: startYear, $lte: endYear}, semester: { $gte: startSemester, $lte: endSemester} });
+        console.log("course data", CourseData);
+        const courseCodes = await CourseData.distinct('courseCode', { year: startYear, semester: startSemester });
+        console.log("Course codes", courseCodes);
         console.log("Got course codes", courseCodes.length);
         const courseDescriptions: CourseDescription[] = [];
         // For each course code, navigate to the individual course page
@@ -98,7 +100,7 @@ const getCourseInfo = async (startYear: number, startSemester: number, endYear: 
     // Get descriptions and attributes
 
     const [descriptions, attributes] = await Promise.all([
-        getCourseDescription(startYear, startSemester, endYear, endSemester),
+        getCourseDescription(startYear, startSemester),
         getAttributes()
     ]);
 
@@ -121,5 +123,15 @@ const getCourseInfo = async (startYear: number, startSemester: number, endYear: 
     return merged;
 
 };
+
+const getCurrentSemester = (): number => {
+    const currentMonth = new Date().getMonth() + 1;
+    let currentSemester = 0;
+    if(currentMonth < 4) currentSemester = 10;
+    else if(currentMonth < 8) currentSemester = 20;
+    else currentSemester = 30;
+    return currentSemester;
+}
+
 // Export the function
-export { getCourseInfo };
+export { getCourseInfo, getCurrentSemester};
