@@ -26,6 +26,7 @@ import {
 } from "../../Controllers/Client/Metadata";
 import {
   handleGetCourseInfo,
+  handleGetCourseInfoByAttribute,
   handleGetCourseInfoByCode
 } from "../../Controllers/Client/CourseInfo";
 const router = Router();
@@ -50,6 +51,9 @@ router.get("/:courseCode/sections", handleGetSectionsByCourseCode);
 
 // Get all meeting times with filtering
 router.get("/meetings/all", handleGetAllMeetings);
+
+//Get course info by attribute
+router.get("/courseInfo/attribute/:attribute", handleGetCourseInfoByAttribute);
 
 //Get course info for a specific course
 router.get("/courseInfo/:courseCode", handleGetCourseInfoByCode);

@@ -370,7 +370,10 @@ const handleSaveToDBCourseInfo = async (data: ICourseInfo[]) => {
 
   try {
     await session.withTransaction(async () => {
-      const courseInfoDelete = await CourseInfo.deleteMany({courseCode: { $in: data.map(course => course.courseCode) }});
+
+      const courseCodesToDelete = data.map(course => course.courseCode);
+
+      const courseInfoDelete = await CourseInfo.deleteMany({courseCode: { $in: courseCodesToDelete }});
 
       let courseInfoToInsert: ICourseInfo[] = [];
 
