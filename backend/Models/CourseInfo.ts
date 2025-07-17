@@ -14,7 +14,8 @@ const CourseInfoSchema: Schema = new Schema(
       type: String,
       required: true,
       trim: true,
-      uppercase: true
+      uppercase: true,
+      unique: true,
     },
     title: {
       type: String,

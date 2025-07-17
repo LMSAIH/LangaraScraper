@@ -1,7 +1,7 @@
 import * as cron from "node-cron";
-import { handleGetCourses } from "../Controllers/CourseScraper";
+import { handleGetCourses, handleGetCourseInfo } from "../Controllers/CourseScraper";
 
-export class CourseScheduler {
+class CourseScheduler {
   private static instance: CourseScheduler;
   private task: cron.ScheduledTask | null = null;
   private isRunning: boolean = false;
@@ -111,3 +111,67 @@ export class CourseScheduler {
     return 30; // Fall
   }
 }
+
+class CourseInfoScheduler {
+  private static instance: CourseInfoScheduler;
+  private task: cron.ScheduledTask | null = null;
+  private isRunning: boolean = false;
+
+  private constructor() {}
+
+  public static getInstance(): CourseInfoScheduler {
+    if (!CourseInfoScheduler.instance) {
+      CourseInfoScheduler.instance = new CourseInfoScheduler();
+    }
+    return CourseInfoScheduler.instance;
+  }
+
+  public start(): void {
+    if (this.task) {
+      console.log('Course info scheduler is already running');
+      return;
+    }
+
+    const runScraper = async () => {
+      if (this.isRunning) {
+        console.log('Course info scheduler is already running');
+        return;
+      }
+
+      try {
+        this.isRunning = true;
+        console.log(`[${new Date().toISOString()}] 🚀 Starting scheduled course info scraper...`);
+        const mockReq = {
+          query: {
+            startYear: new Date().getFullYear() - 2,
+            saveToDb: true
+          }
+        } as any;
+
+        const mockRes = {
+          json: (data: any) => {
+            console.log(`[${new Date().toISOString()}] Course info scraper completed successfully`);
+          }
+        } as any;
+
+        await handleGetCourseInfo(mockReq, mockRes);
+
+      } catch (error) {
+        const timestamp = new Date().toISOString();
+        console.error(`[${timestamp}]  Error in scheduled course info scraper:`, error);
+      } finally {
+        this.isRunning = false;
+        console.log(`[${new Date().toISOString()}] 🏁 Course info scraper run completed`);
+      }
+    }
+
+    // Run immediately on start
+    runScraper();
+
+    // Schedule to run every week
+    this.task = cron.schedule('0 2 * * 0', runScraper, {
+      timezone: "America/Vancouver"
+    });
+  }
+}
+export { CourseScheduler, CourseInfoScheduler };

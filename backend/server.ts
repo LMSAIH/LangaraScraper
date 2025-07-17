@@ -4,7 +4,7 @@ import cors from "cors";
 import { router as CourseRoutes } from "./routes/Client/CourseRoutes";
 import { router as BCTGRouter } from "./routes/Scraper/BCTransferGuide";
 import { router as ScraperCourseRoutes } from "./routes/Scraper/Courses";
-import { CourseScheduler } from "./Schedulers/CourseScheduler";
+import { CourseScheduler, CourseInfoScheduler } from "./Schedulers/CourseScheduler";
 import { generalLimiter } from "./RateLimiting/RateLimiters";
 import morgan from "morgan";
 import responseTime from "response-time";

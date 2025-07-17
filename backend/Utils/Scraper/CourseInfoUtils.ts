@@ -43,13 +43,23 @@ const getAttributes = async () : Promise<CourseAttribute[]> => {
 
 }
 
-const getCourseDescription = async (startYear: number, startSemester: number) => {
+const getCourseDescription = async (startYear: number) => {
     try {
-        console.log("course data", CourseData);
-        const courseCodes = await CourseData.distinct('courseCode', { year: startYear, semester: startSemester });
-        console.log("Course codes", courseCodes);
-        console.log("Got course codes", courseCodes.length);
+        let courseCodes: string[] = [];
+
+        // If startYear is provided, get course codes from startYear to current year, otherwise get all course codes
+        if(startYear) {
+          const currentYear = new Date().getFullYear();
+          courseCodes = await CourseData.find({
+            year: { $gte: startYear, $lte: currentYear }
+          }).distinct('courseCode');
+          
+        } else {
+            courseCodes = await CourseData.distinct('courseCode');
+        }
+        
         const courseDescriptions: CourseDescription[] = [];
+
         // For each course code, navigate to the individual course page
         for (const courseCode of courseCodes) {
             const [subject, courseNumber] = courseCode.split(" ");
@@ -63,7 +73,7 @@ const getCourseDescription = async (startYear: number, startSemester: number) =>
                 if(error.response.status === 404) {
                   courseDescriptions.push({
                     courseCode: courseCode,
-                    title: "Course not found",
+                    title: "Course not found",  
                     description: "This course is no longer offered."
                   });
                   continue;
@@ -96,11 +106,11 @@ const getCourseDescription = async (startYear: number, startSemester: number) =>
 };
 
 // Merge course descriptions and attributes into CourseInfo objects from a specidic date 
-const getCourseInfo = async (startYear: number, startSemester: number, endYear: number, endSemester: number): Promise<ICourseInfo[]> => {
+const getCourseInfo = async (startYear: number): Promise<ICourseInfo[]> => {
     // Get descriptions and attributes
 
     const [descriptions, attributes] = await Promise.all([
-        getCourseDescription(startYear, startSemester),
+        getCourseDescription(startYear),
         getAttributes()
     ]);
 

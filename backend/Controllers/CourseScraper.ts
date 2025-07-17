@@ -340,25 +340,17 @@ const getCurrentSemesters = (currentSemester: number): number[] => {
 };
 
 const handleGetCourseInfo = async (req: Request, res: Response): Promise<void> => {
-  const { startYear, startSemester, saveToDb = false } = req.query;
+  const { startYear, saveToDb = false } = req.query;   //start year is optional, if not provided, all course info will be scraped, otherwise only the course info from the start year to the current year will be scraped
 
-  const currentYear = new Date().getFullYear();
-  const currentSemester = getCurrentSemester();
-
-  if (!startYear || !startSemester) {
-    res.status(400).json({ error: "Start year and start semester are required" });
-    return;
-  }
   try {
-    const courseInfo = await getCourseInfo(Number(startYear), Number(startSemester), Number(currentYear), Number(currentSemester));
+    const courseInfo = await getCourseInfo(Number(startYear));
 
     if(saveToDb) {
-      await handleSaveToDBCourseInfo(Number(startYear), Number(startSemester), Number(currentYear), Number(currentSemester), courseInfo);
+      await handleSaveToDBCourseInfo(courseInfo);
     }
     const response = {
       success: true,
       startYear: Number(startYear),
-      startSemester: Number(startSemester),
       scraped: {
         totalCourses: courseInfo.length,
         courses: courseInfo,
@@ -373,13 +365,12 @@ const handleGetCourseInfo = async (req: Request, res: Response): Promise<void> =
   }
 }
 
-const handleSaveToDBCourseInfo = async (startYear: number, startSemester: number, currentYear: number, currentSemester: number, data: ICourseInfo[]) => {
+const handleSaveToDBCourseInfo = async (data: ICourseInfo[]) => {
   const session = await mongoose.startSession();
 
   try {
     await session.withTransaction(async () => {
-
-      const courseInfoDelete = await CourseInfo.deleteMany({ year: { $gte: startYear, $lte: currentYear }, semester: { $gte: startSemester, $lte: currentSemester } });
+      const courseInfoDelete = await CourseInfo.deleteMany({courseCode: { $in: data.map(course => course.courseCode) }});
 
       let courseInfoToInsert: ICourseInfo[] = [];
 
@@ -388,9 +379,11 @@ const handleSaveToDBCourseInfo = async (startYear: number, startSemester: number
           courseCode: course.courseCode,
           title: course.title,
           description: course.description,
+          attributes: course.attributes,
           updatedAt: new Date(),
         });
       }
+      
       const courseInfo = await CourseInfo.insertMany(courseInfoToInsert);
 
       console.log(`Deleted: ${courseInfoDelete.deletedCount} course info`);
