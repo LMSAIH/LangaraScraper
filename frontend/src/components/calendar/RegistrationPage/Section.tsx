@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Section } from '../../../Types/Registration'
 import { getCourseStatus, getStripeColor, formatDays, formatTime } from '../../../Utils/RegistrationUtils';
 import { FaCaretDown, FaCaretUp } from "react-icons/fa6";
@@ -50,7 +51,13 @@ const SectionComponent = ({
         <div className='flex items-start justify-between mb-2'>
           <div className="flex-1">
             <div className='font-bold text-gray-900 dark:text-white text-base mb-1'>
-              {section.courseCode}
+              <Link 
+                to={`/courses/${section.courseCode}`}
+                className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {section.courseCode}
+              </Link>
             </div>
             <div className='text-sm text-gray-600 dark:text-gray-400 font-medium mb-1'>
               {section.title}
