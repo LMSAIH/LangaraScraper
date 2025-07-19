@@ -340,7 +340,7 @@ const getCurrentSemesters = (currentSemester: number): number[] => {
 };
 
 const handleGetCourseInfo = async (req: Request, res: Response): Promise<void> => {
-  const { startYear, saveToDb = false } = req.query;   //start year is optional, if not provided, all course info will be scraped, otherwise only the course info from the start year to the current year will be scraped
+  const { startYear, saveToDb = false } = req.body;   //start year is optional, if not provided, all course info will be scraped, otherwise only the course info from the start year to the current year will be scraped
 
   try {
     const courseInfo = await getCourseInfo(Number(startYear));
