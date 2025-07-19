@@ -4,10 +4,12 @@ import {
   getCourses,
   parseCourseData,
 } from "../Utils/Scraper/ScraperUtils";
-import { CourseData } from "../Types/ScraperTypes";
+import { CourseData, ICourseInfo } from "../Types/ScraperTypes";
 import { CourseData as DBCourseData } from "../Models/CourseData";
 import { CourseSection } from "../Models/CourseSection";
 import { MeetingTime } from "../Models/MeetingTime";
+import { CourseInfo } from "../Models/CourseInfo";
+import { getCourseInfo, getCurrentSemester } from "../Utils/Scraper/CourseInfoUtils";
 import mongoose from "mongoose";
 
 const handleGetSubjects = async (
@@ -212,20 +214,9 @@ const handleGetAllHistoricalCourses = async (req: Request, res: Response): Promi
   try {
     const startYear = 1999;
     const startSemester = 20; // Summer 1999
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    
-    // Determine current semester based on month
-    let currentSemester: number;
-    const month = currentDate.getMonth() + 1; // getMonth() is 0-indexed
-    
-    if (month >= 1 && month <= 4) {
-      currentSemester = 10; // Spring
-    } else if (month >= 5 && month <= 8) {
-      currentSemester = 20; // Summer
-    } else {
-      currentSemester = 30; // Fall
-    }
+
+    const currentYear = new Date().getFullYear();
+    const currentSemester = getCurrentSemester();
 
     console.log(`Starting historical scrape from ${startYear}/${startSemester} to ${currentYear}/${currentSemester}`);
 
@@ -237,7 +228,7 @@ const handleGetAllHistoricalCourses = async (req: Request, res: Response): Promi
     // Generate all year/semester combinations
     for (let year = startYear; year <= currentYear; year++) {
       const semesters = year === currentYear 
-        ? getSemestersUpToCurrent(currentSemester)
+        ? getCurrentSemesters(currentSemester)
         : [10, 20, 30]; // Spring, Summer, Fall
       
       for (const semester of semesters) {
@@ -340,7 +331,7 @@ const handleGetAllHistoricalCourses = async (req: Request, res: Response): Promi
 };
 
 // Helper function to get semesters up to current
-const getSemestersUpToCurrent = (currentSemester: number): number[] => {
+const getCurrentSemesters = (currentSemester: number): number[] => {
   const semesters = [];
   if (currentSemester >= 10) semesters.push(10); // Spring
   if (currentSemester >= 20) semesters.push(20); // Summer
@@ -348,5 +339,67 @@ const getSemestersUpToCurrent = (currentSemester: number): number[] => {
   return semesters;
 };
 
+const handleGetCourseInfo = async (req: Request, res: Response): Promise<void> => {
+  const { startYear, saveToDb = false } = req.query;   //start year is optional, if not provided, all course info will be scraped, otherwise only the course info from the start year to the current year will be scraped
+
+  try {
+    const courseInfo = await getCourseInfo(Number(startYear));
+
+    if(saveToDb) {
+      await handleSaveToDBCourseInfo(courseInfo);
+    }
+    const response = {
+      success: true,
+      startYear: Number(startYear),
+      scraped: {
+        totalCourses: courseInfo.length,
+        courses: courseInfo,
+      },
+      timestamp: new Date().toISOString(),
+    }
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error getting course info:', error);
+    res.status(500).json({ error: 'Failed to get course info' });
+  }
+}
+
+const handleSaveToDBCourseInfo = async (data: ICourseInfo[]) => {
+  const session = await mongoose.startSession();
+
+  try {
+    await session.withTransaction(async () => {
+
+      const courseCodesToDelete = data.map(course => course.courseCode);
+
+      const courseInfoDelete = await CourseInfo.deleteMany({courseCode: { $in: courseCodesToDelete }});
+
+      let courseInfoToInsert: ICourseInfo[] = [];
+
+      for(const course of data) {
+        courseInfoToInsert.push({
+          courseCode: course.courseCode,
+          title: course.title,
+          description: course.description,
+          attributes: course.attributes,
+          updatedAt: new Date(),
+        });
+      }
+      
+      const courseInfo = await CourseInfo.insertMany(courseInfoToInsert);
+
+      console.log(`Deleted: ${courseInfoDelete.deletedCount} course info`);
+      console.log(`Inserted: ${courseInfo.length} course info`);
+    });
+  
+  } catch (error) {
+    console.error('Error saving course info:', error);
+    throw new Error('Failed to save course info');
+  } finally {
+    await session.endSession();
+  }
+}
+
 // Export the new function
-export { handleGetSubjects, handleGetCourses, handleGetAllHistoricalCourses };
+export { handleGetSubjects, handleGetCourses, handleGetAllHistoricalCourses, handleGetCourseInfo};

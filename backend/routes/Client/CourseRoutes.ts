@@ -24,12 +24,22 @@ import {
   handleGetMetaInstructors,
   handleGetMetaTerms
 } from "../../Controllers/Client/Metadata";
+import {
+  handleGetCourseInfo,
+  handleGetCourseInfoByAttribute,
+  handleGetCourseInfoByCode
+} from "../../Controllers/Client/CourseInfo";
 const router = Router();
 
 // Get all courses with basic filtering
 router.get("/", handleGetCourses);
 
+// Get course list with filters
 router.get("/courseList", handleGetCourseList);
+
+//Get course info for all courses
+router.get("/courseInfo", handleGetCourseInfo);
+
 // Get specific course by code
 router.get("/:courseCode", handleGetCourseByCode);
 
@@ -41,6 +51,12 @@ router.get("/:courseCode/sections", handleGetSectionsByCourseCode);
 
 // Get all meeting times with filtering
 router.get("/meetings/all", handleGetAllMeetings);
+
+//Get course info by attribute
+router.get("/courseInfo/attribute/:attribute", handleGetCourseInfoByAttribute);
+
+//Get course info for a specific course
+router.get("/courseInfo/:courseCode", handleGetCourseInfoByCode);
 
 // Get meeting times for a specific section
 router.get("/sections/:crn/meetings", handleGetMeetingTimesBySectionCRN);
@@ -65,5 +81,6 @@ router.get("/sections/meetings/all", handleGetAggregatedCourseDataSectionAndMeet
 
 // Get sections and meetings without course data (better performance)
 router.get("/sections/meetings/", handleGetAggregatedSectionsAndMeetings)
+
 
 export { router };
