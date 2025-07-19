@@ -1,6 +1,7 @@
 import './App.css'
 import {  BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Registration from './pages/Registration'
+import CoursePage from './pages/CoursePage'
 import { ThemeProvider } from './contexts/ThemeContext'
 import Navbar from './components/Navbar'
 
@@ -12,6 +13,7 @@ function App() {
           <Navbar />
           <Routes>
             <Route path="/" element={<Registration />} />
+            <Route path='/courses/:courseCode' element={<CoursePage />} />
           </Routes>
         </div>
       </Router>
