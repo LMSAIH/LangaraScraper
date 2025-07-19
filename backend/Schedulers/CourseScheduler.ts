@@ -36,7 +36,8 @@ class CourseScheduler {
         const mockReq = {
           body: {
             year: new Date().getFullYear(),
-            semester: this.getCurrentSemester()
+            semester: this.getCurrentSemester(),
+            saveToDb: true  
           },
           query: {},
           params: {}
@@ -172,6 +173,26 @@ class CourseInfoScheduler {
     this.task = cron.schedule('0 2 * * 0', runScraper, {
       timezone: "America/Vancouver"
     });
+  }
+
+  public stop(): void {
+    if (this.task) {
+      this.task.stop();
+      this.task.destroy();
+      this.task = null;
+      console.log('Course info scheduler stopped');
+    }
+    
+    // Reset running state
+    this.isRunning = false;
+  }
+
+  public isSchedulerRunning(): boolean {
+    return this.task !== null;
+  }
+
+  public isScraperCurrentlyRunning(): boolean {
+    return this.isRunning;
   }
 }
 export { CourseScheduler, CourseInfoScheduler };
