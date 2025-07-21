@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Request, Response} from "express";
-import { BCTransferAgreement, BCTransferSingleAgreement, BCTransferBundleAgreement} from "../Types/ScraperTypes";
+import { BCTransferAgreement} from "../Types/ScraperTypes";
 
 const handleGetUniqueCourseTransfer = async (
   req: Request, 
@@ -75,7 +75,6 @@ const processAgreement = (agreement: any, courseNumber: number, subjectCode: str
     }
 
     agreementsList.push({
-      type: 'bundle',
       SendingCourseNumber: fromCourseNumbers,
       SendingInstitutionCode: institutionCode,
       SendingSubject: fromCourseSubjects,
@@ -86,7 +85,7 @@ const processAgreement = (agreement: any, courseNumber: number, subjectCode: str
       ReceivingCourseNumber: toCourseNumbers,
       StartDate: agreement.StartDate,
       EndDate: varEndDate,
-    } as BCTransferBundleAgreement);
+    } as BCTransferAgreement);
   } 
   //Handle general prereq fufillments, SFU's Q fufillment
   else if (agreementDetails.includes('&')){
@@ -96,19 +95,18 @@ const processAgreement = (agreement: any, courseNumber: number, subjectCode: str
       const receivingCourseNumber = courseMatch[3];
       const receivingCredits = parseInt(courseMatch[4]);
       agreementsList.push({
-        type: 'single',
-        SendingCourseNumber: courseNumber,
+        SendingCourseNumber: [String(courseNumber)],
         SendingInstitutionCode: institutionCode,
-        SendingSubject: subjectCode,
-        SendingCredits: agreement.SndrCourseCredit,
+        SendingSubject: [subjectCode],
+        SendingCredits: [agreement.SndrCourseCredit],
         RecevingInstitutionCode: agreement.RcvrInstitutionCode,
-        ReceivingSubject: receivingSubject,
-        ReceivingCredits: receivingCredits,
-        ReceivingCourseNumber: receivingCourseNumber,
+        ReceivingSubject: [receivingSubject],
+        ReceivingCredits: [receivingCredits],
+        ReceivingCourseNumber: [receivingCourseNumber],
         StartDate: agreement.StartDate,
         EndDate: varEndDate,
         details: agreement.Condition,
-      } as BCTransferSingleAgreement);
+      } as BCTransferAgreement);
     }
   }
   //single transfer
@@ -116,18 +114,17 @@ const processAgreement = (agreement: any, courseNumber: number, subjectCode: str
     //Handle Courses that don't transfer
     if (agreementDetails === "No credit"){
       agreementsList.push({
-        type: 'single',
-        SendingCourseNumber: courseNumber,
+        SendingCourseNumber: [String(courseNumber)],
         SendingInstitutionCode: institutionCode,
-        SendingSubject: subjectCode,
-        SendingCredits: agreement.SndrCourseCredit,
+        SendingSubject: [subjectCode],
+        SendingCredits: [agreement.SndrCourseCredit],
         RecevingInstitutionCode: agreement.RcvrInstitutionCode,
-        ReceivingSubject: "No Credit",  
-        ReceivingCredits: 0,
-        ReceivingCourseNumber: "No Credit",
+        ReceivingSubject: ["No Credit"],  
+        ReceivingCredits: [0],
+        ReceivingCourseNumber: ["No Credit"],
         StartDate: agreement.StartDate,
         EndDate: varEndDate,
-      } as BCTransferSingleAgreement);
+      } as BCTransferAgreement);
     }
     //Courses that transfer as a 1-to-1
     else{
@@ -137,18 +134,17 @@ const processAgreement = (agreement: any, courseNumber: number, subjectCode: str
         const receivingCourseNumber = courseMatch[3];
         const receivingCredits = parseInt(courseMatch[4]);
         agreementsList.push({
-          type: 'single',
-          SendingCourseNumber: courseNumber,
+          SendingCourseNumber: [String(courseNumber)],
           SendingInstitutionCode: institutionCode,
-          SendingSubject: subjectCode,
-          SendingCredits: agreement.SndrCourseCredit,
+          SendingSubject: [subjectCode],
+          SendingCredits: [agreement.SndrCourseCredit],
           RecevingInstitutionCode: agreement.RcvrInstitutionCode,
-          ReceivingSubject: receivingSubject,
-          ReceivingCredits: receivingCredits,
-          ReceivingCourseNumber: receivingCourseNumber,
+          ReceivingSubject: [receivingSubject],
+          ReceivingCredits: [receivingCredits],
+          ReceivingCourseNumber: [receivingCourseNumber],
           StartDate: agreement.StartDate,
           EndDate: varEndDate,
-        } as BCTransferSingleAgreement);
+        } as BCTransferAgreement);
       }
     }
   }
@@ -298,7 +294,7 @@ const updateTransfersForSchool = async(insitutionCode: string) =>{
 
     // You'll need to add the actual API call and processing logic here
     // const response = await axios.post(fetchTransfersURL, requestPayload, config);
-    
+
   }
 }
 
