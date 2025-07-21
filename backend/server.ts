@@ -4,6 +4,7 @@ import cors from "cors";
 import { router as CourseRoutes } from "./routes/Client/CourseRoutes";
 import { router as BCTGRouter } from "./routes/Scraper/BCTransferGuide";
 import { router as ScraperCourseRoutes } from "./routes/Scraper/Courses";
+import {router as CourseInfoRoutes} from "./routes/Client/CourseInfo";
 import { CourseScheduler, CourseInfoScheduler } from "./Schedulers/CourseScheduler";
 import { generalLimiter } from "./RateLimiting/RateLimiters";
 import morgan from "morgan";
@@ -85,6 +86,7 @@ app.use(express.json());
 app.use(cors());
 
 app.use("/courses", CourseRoutes);
+app.use("/courseInfo", CourseInfoRoutes);
 //Comment this routes before deployment, they are only for testing purposes and will all run on scheduled tasks
 app.use("/scraper/BCTG", BCTGRouter);
 app.use("/scraper/", ScraperCourseRoutes);
