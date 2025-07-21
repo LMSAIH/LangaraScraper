@@ -247,4 +247,59 @@ const getTransfersForCourse = async(courseNumber: number, subjectCode: string, i
   }
 }
 
+const updateTransfersForSchool = async(insitutionCode: string) =>{
+  //implement getTransfersForCourse but for all courses at langara
+  const wpnonce = fetchNonce();
+
+  const getInsititutionIdURL=`https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetFromInstitutions?countryId=40&internalOnly=true`;
+
+  const institutionId = (await axios.get(getInsititutionIdURL)).data.find(
+    (institution: any) => institution.Code === insitutionCode)
+    .Id;
+
+  const getSubjectsURL=`https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetSubjects?institutionID=${await institutionId}&sending=true`;
+
+  const subjectsResponse = await axios.get(getSubjectsURL);
+
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  };
+  const fetchTransfersURL = `https://www.bctransferguide.ca/wp-json/bctg-search/course-to-course/search-from?_wpnonce=${await wpnonce}`;
+
+  for (const subj of subjectsResponse.data) { //For each subject in a college, fetch all transfers for the subject's courses
+    let pageNum: number = 0;
+    const requestPayload = {
+      "sender": institutionId,
+      "institutionCode": insitutionCode,
+      "subjectId": subj.Id,
+      "subjectCode": subj.Code,
+      "year": 2025,
+      "pageNumber": pageNum,
+      "isPublic": null,
+      "isMember": true
+    };
+    let fetchTransfersResponse;
+    let agreementsList: BCTransferAgreement[] = [];
+    fetchTransfersResponse = await axios.post(fetchTransfersURL,requestPayload,config);//Idk of another way to fetch the totalPages without a total reuqest//
+    for (let currentPage: number = pageNum; currentPage <= fetchTransfersResponse.data.totalPages; currentPage++){//For each page/website for the subject
+
+      fetchTransfersResponse = await axios.post(fetchTransfersURL,requestPayload,config);
+
+      for (const course of fetchTransfersResponse.data.courses){//for each course on the page
+
+        for (const transfer of course.agreemenets){//for each transfer for said course
+          processAgreement(transfer, transfer.SndrCourseNumber, subj.Code, institutionId, agreementsList);
+        }
+      }
+    }
+
+    // You'll need to add the actual API call and processing logic here
+    // const response = await axios.post(fetchTransfersURL, requestPayload, config);
+    
+  }
+}
+
 export { handleGetUniqueCourseTransfer };
