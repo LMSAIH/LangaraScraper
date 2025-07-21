@@ -1,7 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface ICourseTransferData extends Document {
-  type: string;
   SendingCourseNumber: string[];
   SendingInstitutionCode: string;
   SendingSubject: string[];
@@ -19,13 +18,8 @@ export interface ICourseTransferData extends Document {
 
 const CourseTransferDataSchema: Schema = new Schema(
     {
-        type: {
-            type: String,
-            required: true,
-            trim: true,
-        },
         SendingCourseNumber: [{
-            type: String,
+            type: [String],
             required: true,
         }],
         SendingInstitutionCode: {
@@ -34,15 +28,15 @@ const CourseTransferDataSchema: Schema = new Schema(
             trim: true,
         },
         SendingSubject: [{
-            type: String,
+            type: [String],
             required: true,
         }],
         SendingCredits: [{
-            type: Number,
+            type: [Number],
             required: true,
         }],
         ReceivingCourseNumber: [{
-            type: String,
+            type: [String],
             required: true,
         }],
         RecevingInstitutionCode: {
@@ -51,11 +45,11 @@ const CourseTransferDataSchema: Schema = new Schema(
             trim: true,
         },
         ReceivingSubject: [{
-            type: String,
+            type: [String],
             required: true,
         }],
         ReceivingCredits: [{
-            type: Number,
+            type: [Number],
             required: true,
         }],
         StartDate: {
@@ -77,8 +71,9 @@ const CourseTransferDataSchema: Schema = new Schema(
 );
 
 // Indexes for better query performance
-CourseTransferDataSchema.index({ courseCode: 1, term: 1 }, { unique: true });
-CourseTransferDataSchema.index({ subject: 1, year: 1, semester: 1 });
+CourseTransferDataSchema.index({ SendingInstitutionCode: 1, SendingSubject: 1, SendingCourseNumber: 1 });
+CourseTransferDataSchema.index({ RecevingInstitutionCode: 1, ReceivingSubject: 1, ReceivingCourseNumber: 1 });
+CourseTransferDataSchema.index({ StartDate: 1, EndDate: 1 });
 
 
 export const CourseTransferData = mongoose.model<ICourseTransferData>(
