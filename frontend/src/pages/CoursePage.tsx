@@ -25,7 +25,7 @@ const CoursePage = () => {
         setLoading(true);
         setError(null);
         
-        const response = await axios.get(`http://localhost:3000/courses/courseInfo/${courseCode}`);
+        const response = await axios.get(`http://localhost:3000/courseInfo/${courseCode}`);
         setCourseInfo(response.data);
       } catch (err) {
         if (axios.isAxiosError(err)) {
@@ -69,11 +69,11 @@ const CoursePage = () => {
             {error}
           </p>
           <Link
-            to="/"
+            to="/courses"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <FaArrowLeft className="h-4 w-4" />
-            Back to Scheduler
+            Back to Courses
           </Link>
         </div>
       </div>
@@ -100,11 +100,11 @@ const CoursePage = () => {
         {/* Header */}
         <div className="mb-8">
           <Link
-            to="/"
+            to="/courses"
             className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors mb-4"
           >
             <FaArrowLeft className="h-4 w-4" />
-            Back to Registration
+            Back to Courses
           </Link>
           
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-700 p-6">
