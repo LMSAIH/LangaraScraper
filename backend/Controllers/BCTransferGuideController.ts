@@ -1,5 +1,7 @@
 import axios from "axios";
+import mongoose from "mongoose";
 import { Request, Response} from "express";
+import { CourseTransferData as DBTransferData } from "../Models/CourseTransferData"
 import { BCTransferAgreement} from "../Types/ScraperTypes";
 
 const handleGetUniqueCourseTransfer = async (
@@ -34,6 +36,37 @@ const fetchNonce = async(): Promise<string> => {
   }
   return nonceMatch[1];
 }
+
+const handleSaveToDB = async (
+  data: BCTransferAgreement[]
+) => {
+  const session = await mongoose.startSession();
+
+  try {
+    await session.withTransaction(async () => {
+      // Delete all existing transfer data
+      const transferDeleteResult = await DBTransferData.deleteMany({});
+
+      // Insert new data
+      const transferInsertResult =
+        data.length > 0
+          ? await DBTransferData.insertMany(data)
+          : [];
+
+      console.log(
+        `Deleted: ${transferDeleteResult.deletedCount} transfers`
+      );
+      console.log(
+        `Inserted: ${transferInsertResult.length} transfers`
+      );
+    });
+  } catch (error) {
+    console.error('Error saving transfer data to database:', error);
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
 
 // Helper function to process individual agreements
 const processAgreement = (agreement: any, courseNumber: number, subjectCode: string, institutionCode: string, agreementsList: BCTransferAgreement[]) => {
@@ -243,59 +276,74 @@ const getTransfersForCourse = async(courseNumber: number, subjectCode: string, i
   }
 }
 
-const updateTransfersForSchool = async(insitutionCode: string) =>{
-  //implement getTransfersForCourse but for all courses at langara
-  const wpnonce = fetchNonce();
+const updateTransfersForSchool = async(institutionCode: string) => {
+  try {
+    const wpnonce = await fetchNonce();
 
-  const getInsititutionIdURL=`https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetFromInstitutions?countryId=40&internalOnly=true`;
+    const getInstitutionIdURL = `https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetFromInstitutions?countryId=40&internalOnly=true`;
 
-  const institutionId = (await axios.get(getInsititutionIdURL)).data.find(
-    (institution: any) => institution.Code === insitutionCode)
-    .Id;
+    const institutionId = (await axios.get(getInstitutionIdURL)).data.find(
+      (institution: any) => institution.Code === institutionCode)
+      .Id;
 
-  const getSubjectsURL=`https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetSubjects?institutionID=${await institutionId}&sending=true`;
+    const getSubjectsURL = `https://ws.bctransferguide.ca/api/custom/ui/v1.7/agreementws/GetSubjects?institutionID=${institutionId}&sending=true`;
 
-  const subjectsResponse = await axios.get(getSubjectsURL);
+    const subjectsResponse = await axios.get(getSubjectsURL);
 
-  const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    }
-  };
-  const fetchTransfersURL = `https://www.bctransferguide.ca/wp-json/bctg-search/course-to-course/search-from?_wpnonce=${await wpnonce}`;
-
-  for (const subj of subjectsResponse.data) { //For each subject in a college, fetch all transfers for the subject's courses
-    let pageNum: number = 0;
-    const requestPayload = {
-      "sender": institutionId,
-      "institutionCode": insitutionCode,
-      "subjectId": subj.Id,
-      "subjectCode": subj.Code,
-      "year": 2025,
-      "pageNumber": pageNum,
-      "isPublic": null,
-      "isMember": true
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
     };
-    let fetchTransfersResponse;
-    let agreementsList: BCTransferAgreement[] = [];
-    fetchTransfersResponse = await axios.post(fetchTransfersURL,requestPayload,config);//Idk of another way to fetch the totalPages without a total reuqest//
-    for (let currentPage: number = pageNum; currentPage <= fetchTransfersResponse.data.totalPages; currentPage++){//For each page/website for the subject
+    const fetchTransfersURL = `https://www.bctransferguide.ca/wp-json/bctg-search/course-to-course/search-from?_wpnonce=${wpnonce}`;
 
-      fetchTransfersResponse = await axios.post(fetchTransfersURL,requestPayload,config);
+    let allAgreements: BCTransferAgreement[] = [];
 
-      for (const course of fetchTransfersResponse.data.courses){//for each course on the page
+    for (const subj of subjectsResponse.data) { //For each subject in a college, fetch all transfers for the subject's courses
+      let pageNum: number = 1;
+      const requestPayload = {
+        "sender": institutionId,
+        "institutionCode": institutionCode,
+        "subjectId": subj.Id,
+        "subjectCode": subj.Code,
+        "year": 2025,
+        "pageNumber": pageNum,
+        "isPublic": null,
+        "isMember": true
+      };
+      
+      let fetchTransfersResponse = await axios.post(fetchTransfersURL, requestPayload, config);
+      
+      for (let currentPage: number = pageNum; currentPage <= fetchTransfersResponse.data.totalPages; currentPage++) {//For each page 
+        if (currentPage > 1) {
+          requestPayload.pageNumber = currentPage;
+          fetchTransfersResponse = await axios.post(fetchTransfersURL, requestPayload, config);
+        }
 
-        for (const transfer of course.agreemenets){//for each transfer for said course
-          processAgreement(transfer, transfer.SndrCourseNumber, subj.Code, institutionId, agreementsList);
+        for (const course of fetchTransfersResponse.data.courses) {//For each course on the page
+          for (const transfer of course.agreements) {//For each transfer agreement of a course
+            processAgreement(transfer, transfer.SndrCourseNumber, subj.Code, institutionCode, allAgreements);
+          }
         }
       }
+
+      console.log(`Processed ${subj.Code} - found ${allAgreements.length} total agreements so far`);
     }
 
-    // You'll need to add the actual API call and processing logic here
-    // const response = await axios.post(fetchTransfersURL, requestPayload, config);
+    // Save all agreements to database
+    if (allAgreements.length > 0) {
+      await handleSaveToDB(allAgreements);
+      console.log(`Successfully saved ${allAgreements.length} transfer agreements for ${institutionCode}`);
+    } else {
+      console.log(`No transfer agreements found for ${institutionCode}`);
+    }
 
+    return allAgreements;
+  } catch (error) {
+    console.error(`Error updating transfers for school ${institutionCode}:`, error);
+    throw error;
   }
-}
+};
 
-export { handleGetUniqueCourseTransfer };
+export { handleGetUniqueCourseTransfer, updateTransfersForSchool };
