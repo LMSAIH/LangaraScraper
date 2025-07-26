@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Section } from '../../../Types/Registration'
 import { getCourseStatus, getStripeColor, formatDays, formatTime } from '../../../Utils/RegistrationUtils';
 import { FaCaretDown, FaCaretUp } from "react-icons/fa6";
+import SectionDetails from './SectionDetails';
 
 interface SectionComponentProps {
   section: Section;
@@ -10,6 +12,7 @@ interface SectionComponentProps {
   onClick: (section: Section) => void;
   onMouseEnter: (section: Section) => void;
   onMouseLeave: () => void;
+  onToggleSection: (section: Section) => void;
 }
 
 const SectionComponent = ({
@@ -18,9 +21,11 @@ const SectionComponent = ({
   isAdded,
   onClick,
   onMouseEnter,
-  onMouseLeave
+  onMouseLeave,
+  onToggleSection
 }: SectionComponentProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  
   const status = getCourseStatus(section);
   const stripeColor = getStripeColor(status);
   const isCancelled = status === 'cancelled';
@@ -50,7 +55,13 @@ const SectionComponent = ({
         <div className='flex items-start justify-between mb-2'>
           <div className="flex-1">
             <div className='font-bold text-gray-900 dark:text-white text-base mb-1'>
-              {section.courseCode}
+              <Link 
+                to={`/courses/${section.courseCode}`}
+                className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {section.courseCode}
+              </Link>
             </div>
             <div className='text-sm text-gray-600 dark:text-gray-400 font-medium mb-1'>
               {section.title}
@@ -110,36 +121,14 @@ const SectionComponent = ({
           </div>
         ))}
 
-        {/* Extended Information - Dropdown */}
+        {/* Extended Information - SectionDetails Component */}
         {isExpanded && (
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-zinc-700 transition-all duration-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="space-y-2">
-                <div className="font-semibold text-gray-900 dark:text-white">Course Details</div>
-                <div className="text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">Credits:</span> {section.credits}
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="font-semibold text-gray-900 dark:text-white">Additional Info</div>
-                {section.additionalFees && section.additionalFees !== '' && (
-                  <div className="text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Fees:</span> {section.additionalFees}
-                  </div>
-                )}
-                {section.repeatLimit && section.repeatLimit !== '' && (
-                  <div className="text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Repeat Limit:</span> {section.repeatLimit}
-                  </div>
-                )}
-                {section.notes && section.notes !== '' && (
-                  <div className="text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Notes:</span> {section.notes}
-                  </div>
-                )}
-              </div>
-            </div>
+            <SectionDetails 
+              section={section} 
+              isAdded={isAdded} 
+              onToggleSection={onToggleSection} 
+            />
           </div>
         )}
       </div>

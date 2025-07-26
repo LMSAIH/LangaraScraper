@@ -37,7 +37,6 @@ const CourseInfoSchema: Schema = new Schema(
 );
 
 // Indexes for better query performance
-CourseInfoSchema.index({ courseCode: 1}, { unique: true });
 CourseInfoSchema.index({ attributes: 1});
 
 // Static methods
