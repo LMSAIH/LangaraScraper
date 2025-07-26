@@ -1,4 +1,4 @@
-import { FaBook } from 'react-icons/fa';
+import { FaBook, FaCaretLeft, FaCaretRight } from 'react-icons/fa';
 import CourseCard from './CourseCard';
 import type { FilterState } from './CourseSearchFilters';
 
@@ -74,28 +74,135 @@ const CourseResults = ({
                 </div>
             )}
 
-            {/* Simple Pagination */}
+            {/* Advanced Pagination */}
             {pagination.totalPages > 1 && (
-                <div className="flex justify-center items-center gap-4">
-                    <button
-                        onClick={() => onPageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="px-4 py-2 text-gray-600 dark:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                    >
-                        Previous
-                    </button>
-                    
-                    <span className="text-gray-600 dark:text-gray-400">
-                        Page {pagination.page} of {pagination.totalPages}
-                    </span>
-                    
-                    <button
-                        onClick={() => onPageChange(currentPage + 1)}
-                        disabled={currentPage === pagination.totalPages}
-                        className="px-4 py-2 text-gray-600 dark:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                    >
-                        Next
-                    </button>
+                <div className="rounded-2xl p-6  border-gray-200 dark:border-zinc-700 transition-all duration-300 hover:shadow-md w-fit mx-auto">
+                    <div className="flex flex-col space-y-3">
+                        {/* Page info */}
+                        <div className="flex justify-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                                Page {pagination.page} of {pagination.totalPages}
+                            </span>
+                        </div>
+
+                        {/* Navigation buttons and page numbers */}
+                        <div className="flex justify-center items-center">
+                            <div className="flex space-x-1 items-center">
+                                {/* Previous button */}
+                                <button
+                                    onClick={() => onPageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className="w-8 h-8 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                >
+                                    <FaCaretLeft className="w-4 h-4" />
+                                </button>
+
+                                {(() => {
+                                    const currentPageNum = pagination.page;
+                                    const totalPages = pagination.totalPages;
+                                    const maxVisiblePages = 5;
+
+                                    let startPage: number;
+                                    let endPage: number;
+
+                                    if (totalPages <= maxVisiblePages) {
+                                        // Show all pages if total is less than max visible
+                                        startPage = 1;
+                                        endPage = totalPages;
+                                    } else {
+                                        // Calculate start and end pages to keep current page centered
+                                        const halfVisible = Math.floor(maxVisiblePages / 2);
+
+                                        if (currentPageNum <= halfVisible) {
+                                            // Near the beginning
+                                            startPage = 1;
+                                            endPage = maxVisiblePages;
+                                        } else if (currentPageNum + halfVisible >= totalPages) {
+                                            // Near the end
+                                            startPage = totalPages - maxVisiblePages + 1;
+                                            endPage = totalPages;
+                                        } else {
+                                            // In the middle
+                                            startPage = currentPageNum - halfVisible;
+                                            endPage = currentPageNum + halfVisible;
+                                        }
+                                    }
+
+                                    const pages = [];
+
+                                    // Add first page and ellipsis if needed
+                                    if (startPage > 1) {
+                                        pages.push(
+                                            <button
+                                                key={1}
+                                                onClick={() => onPageChange(1)}
+                                                className="w-8 h-8 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600"
+                                            >
+                                                1
+                                            </button>
+                                        );
+                                        if (startPage > 2) {
+                                            pages.push(
+                                                <span key="ellipsis1" className="flex items-center px-2 text-gray-400 text-sm">...</span>
+                                            );
+                                        }
+                                    }
+
+                                    // Add visible page numbers
+                                    for (let i = startPage; i <= endPage; i++) {
+                                        pages.push(
+                                            <button
+                                                key={i}
+                                                onClick={() => onPageChange(i)}
+                                                className={`w-8 h-8 rounded-lg text-sm font-medium transition-all duration-200 ${i === currentPageNum
+                                                    ? 'bg-blue-500 text-white shadow-md transform scale-105'
+                                                    : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
+                                                    }`}
+                                            >
+                                                {i}
+                                            </button>
+                                        );
+                                    }
+
+                                    // Add last page and ellipsis if needed
+                                    if (endPage < totalPages) {
+                                        if (endPage < totalPages - 1) {
+                                            pages.push(
+                                                <span key="ellipsis2" className="flex items-center px-2 text-gray-400 text-sm">...</span>
+                                            );
+                                        }
+                                        pages.push(
+                                            <button
+                                                key={totalPages}
+                                                onClick={() => onPageChange(totalPages)}
+                                                className="w-8 h-8 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600"
+                                            >
+                                                {totalPages}
+                                            </button>
+                                        );
+                                    }
+
+                                    return pages;
+                                })()}
+
+                                {/* Next button */}
+                                <button
+                                    onClick={() => onPageChange(currentPage + 1)}
+                                    disabled={currentPage === pagination.totalPages}
+                                    className="w-8 h-8 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                >
+                                    <FaCaretRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Course count info */}
+                        <div className="flex justify-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                                Displaying {courses.length} of {pagination.total} courses
+                            </span>
+                        </div>
+                    </div>
                 </div>
             )}
         </>
