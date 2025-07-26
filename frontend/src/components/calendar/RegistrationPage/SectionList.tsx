@@ -10,6 +10,7 @@ interface SectionListProps {
   onSectionClick: (section: Section) => void;
   onSectionHover: (section: Section) => void;
   onSectionLeave: () => void;
+  onToggleSection: (section: Section) => void;
 }
 
 const SectionList = ({
@@ -20,7 +21,8 @@ const SectionList = ({
   error,
   onSectionClick,
   onSectionHover,
-  onSectionLeave
+  onSectionLeave,
+  onToggleSection
 }: SectionListProps) => {
   return (
     <div className='max-h-96 overflow-y-auto'>
@@ -70,6 +72,7 @@ const SectionList = ({
             onClick={onSectionClick}
             onMouseEnter={onSectionHover}
             onMouseLeave={onSectionLeave}
+            onToggleSection={onToggleSection}
           />
         </div>
       ))}
