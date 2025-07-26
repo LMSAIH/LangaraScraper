@@ -46,7 +46,12 @@ const Registration = () => {
                 throw new Error('No terms available');
             }
 
-            setTerms(terms.slice(terms.length - 3));
+            if( terms.length - 3 < 3){
+                setTerms(terms);
+            } else {
+                setTerms(terms.slice(terms.length - 3));
+            }
+
             setTerm(terms[terms.length - 1]);
 
         } catch (error) {
@@ -255,6 +260,7 @@ const Registration = () => {
                                     onSectionClick={handleSectionClick}
                                     onSectionHover={handleSectionHover}
                                     onSectionLeave={handleSectionLeave}
+                                    onToggleSection={handleSectionClick}
                                 />
                             </div>
                         </div>
