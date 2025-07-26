@@ -31,6 +31,7 @@
     "mongoose": "^8.16.1",
     "morgan": "^1.10.0",
     "node-cron": "^4.2.0",
+    "rate-my-professor-api-ts": "^1.0.5",
     "response-time": "^2.3.3",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.3",
