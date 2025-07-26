@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import SettingsModal from './SettingsModal';
 import StatusLegendModal from './StatusLegendModal';
+import { Link } from 'react-router-dom';
 
 const Navbar: React.FC = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -15,33 +16,21 @@ const Navbar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-                Langara<span className="text-red-500">Scraper</span>
-              </h1>
+              <Link to="/" className="text-xl font-bold text-gray-900 dark:text-white">
+                Langara Scheduler
+              </Link>
             </div>
           </div>
 
           {/* Center Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              <a
-                href="#"
+              <Link
+                to="/courses"
                 className="text-gray-900 dark:text-white hover:text-red-500 dark:hover:text-red-400 px-3 py-2 text-sm font-medium transition-colors duration-200"
               >
-                Registration
-              </a>
-              <a
-                href="#"
-                className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 px-3 py-2 text-sm font-medium transition-colors duration-200"
-              >
-                Schedule
-              </a>
-              <a
-                href="#"
-                className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 px-3 py-2 text-sm font-medium transition-colors duration-200"
-              >
-                Transfer Guide
-              </a>
+                Courses
+              </Link>
             </div>
           </div>
 
