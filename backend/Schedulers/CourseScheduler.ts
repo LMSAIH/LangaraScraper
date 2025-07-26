@@ -33,10 +33,13 @@ class CourseScheduler {
         this.isRunning = true;
         console.log(`[${new Date().toISOString()}] 🚀 Starting scheduled course scraper...`);
         
+        const nextSemester = this.getNextSemester();
+        console.log(`[${new Date().toISOString()}] 📅 Scraping next semester: ${nextSemester.year}-${nextSemester.semester}`);
+        
         const mockReq = {
           body: {
-            year: new Date().getFullYear(),
-            semester: this.getCurrentSemester(),
+            year: nextSemester.year,
+            semester: nextSemester.semester,
             saveToDb: true  
           },
           query: {},
@@ -47,18 +50,18 @@ class CourseScheduler {
           json: (data: any) => {
             const timestamp = new Date().toISOString();
             if (data.success) {
-              console.log(`[${timestamp}] Scheduled scraper completed successfully`);
+              console.log(`[${timestamp}] ✅ Scheduled scraper completed successfully`);
               if (data.coursesScraped) {
-                console.log(`[${timestamp}]  Scraped ${data.coursesScraped} courses`);
+                console.log(`[${timestamp}] 📊 Scraped ${data.coursesScraped} courses for ${nextSemester.year}-${nextSemester.semester}`);
               }
             } else {
-              console.log(`[${timestamp}]  Scheduled scraper failed:`, data.error);
+              console.log(`[${timestamp}] ❌ Scheduled scraper failed:`, data.error);
             }
           },
           status: (code: number) => ({
             json: (data: any) => {
               const timestamp = new Date().toISOString();
-              console.log(`[${timestamp}]  Scheduled scraper failed with status ${code}:`, data);
+              console.log(`[${timestamp}] ❌ Scheduled scraper failed with status ${code}:`, data);
             }
           })
         } as any;
@@ -67,7 +70,7 @@ class CourseScheduler {
         
       } catch (error) {
         const timestamp = new Date().toISOString();
-        console.error(`[${timestamp}]  Error in scheduled course scraper:`, error);
+        console.error(`[${timestamp}] ❌ Error in scheduled course scraper:`, error);
       } finally {
         this.isRunning = false;
         console.log(`[${new Date().toISOString()}] 🏁 Scraper run completed`);
@@ -82,7 +85,7 @@ class CourseScheduler {
       timezone: "America/Vancouver"
     });
 
-    console.log('Course scheduler started - will run every hour');
+    console.log('Course scheduler started - will run every hour and scrape next semester');
   }
 
   public stop(): void {
@@ -111,6 +114,24 @@ class CourseScheduler {
     if (month >= 5 && month <= 8) return 20; // Summer  
     return 30; // Fall
   }
+
+  private getNextSemester(): { year: number, semester: number } {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1; // 1-12
+    
+    // Determine next semester based on current month
+    if (month >= 1 && month <= 4) {
+        // Currently Winter -> next is Summer (same year)
+        return { year: currentYear, semester: 20 };
+    } else if (month >= 5 && month <= 8) {
+        // Currently Summer -> next is Fall (same year)
+        return { year: currentYear, semester: 30 };
+    } else {
+        // Currently Fall -> next is Winter (next year)
+        return { year: currentYear + 1, semester: 10 };
+    }
+}
 }
 
 class CourseInfoScheduler {
