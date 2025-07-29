@@ -3,6 +3,7 @@ import { CourseData } from "../../Models/CourseData";
 import { CourseSection } from "../../Models/CourseSection";
 import { MeetingTime } from "../../Models/MeetingTime";
 
+
 const handleGetAggregatedCourseDataByCourseCode = async (
   req: Request,
   res: Response
@@ -205,14 +206,19 @@ const handleGetAggregatedSectionsAndMeetings = async (
     if (year) baseSectionQuery.year = Number(year);
     if (semester) baseSectionQuery.semester = Number(semester);
     if (subject) baseSectionQuery.subject = String(subject).toUpperCase();
-    if (courseCode) baseSectionQuery.courseCode = new RegExp(String(courseCode), "i");
+    if (courseCode)
+      baseSectionQuery.courseCode = new RegExp(String(courseCode), "i");
     if (available === "true") baseSectionQuery.seatsAvailable = { $gt: "0" };
 
     if (instructor) {
       // Get meeting times that match the instructor
-      const meetingQuery: any = {
-        instructor: new RegExp(String(instructor), "i"),
-      };
+
+      const meetingQuery: any = {};
+
+      const instructorRegex = `.*${String(instructor).replace(" ", ".*")}.*`;
+
+      meetingQuery.instructor = { $regex: instructorRegex, $options: "i" };
+
       if (year) meetingQuery.year = Number(year);
       if (semester) meetingQuery.semester = Number(semester);
 
@@ -259,6 +265,7 @@ const handleGetAggregatedSectionsAndMeetings = async (
       .sort({ subject: 1, courseCode: 1, section: 1 })
       .lean();
 
+    console.log("Sections found:", sections);
     if (sections.length === 0) {
       res.json({
         success: true,
@@ -290,9 +297,10 @@ const handleGetAggregatedSectionsAndMeetings = async (
     const meetingTimesQuery: any = { sectionCRN: { $in: crns } };
     if (year) meetingTimesQuery.year = Number(year);
     if (semester) meetingTimesQuery.semester = Number(semester);
-    if (instructor)
-      meetingTimesQuery.instructor = new RegExp(String(instructor), "i");
-
+    if (instructor) {
+      const instructorRegex = `.*${String(instructor).replace(" ", ".*")}.*`;
+      meetingTimesQuery.instructor = { $regex: instructorRegex, $options: "i" };
+    }
     const meetingTimes = await MeetingTime.find(meetingTimesQuery)
       .sort({ sectionCRN: 1, sectionType: 1 })
       .lean();
