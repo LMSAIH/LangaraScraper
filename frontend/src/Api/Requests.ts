@@ -18,27 +18,29 @@ const fetchSections = async (
   courseCode?: string,
   page: number = 1
 ) => {
-  const params = new URLSearchParams({
+  const params: any = {
     year: year.toString(),
     semester: semester.toString(),
     limit: pagination.limit.toString(),
     page: page.toString(),
-  });
+  };
 
-  if (instructor && instructor.trim()) {
-    params.append("instructor",instructor.trim());
+  if (instructor) {
+    const cleanInstructorName = instructor.trim().replace(/\s+/g, ' ');
+    params.instructor = cleanInstructorName;
   }
 
   if (subject && subject.trim()) {
-    params.append("subject", subject.trim());
+    params.subject = subject.trim();
   }
 
   if (courseCode && courseCode.trim()) {
-    params.append("courseCode", courseCode.trim());
+    params.courseCode = courseCode.trim();
   }
 
   const response = await axios.get<ApiResponse>(
-    `http://localhost:3000/courses/sections/meetings/?${params.toString()}`
+    `http://localhost:3000/courses/sections/meetings/`,
+    { params: {...params} }
   );
 
   return response.data;
