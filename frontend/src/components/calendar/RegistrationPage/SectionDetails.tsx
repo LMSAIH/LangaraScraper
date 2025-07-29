@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import type { Section } from '../../../Types/Registration';
-import { formatDays, formatTime } from '../../../Utils/RegistrationUtils';
 
 interface SectionDetailsProps {
   section: Section;
@@ -25,24 +24,15 @@ const SectionDetails = ({ section }: SectionDetailsProps) => {
 
   // Extract unique professor names from all meeting times
   const extractProfessorNames = (section: Section): string[] => {
-    console.log('Section meeting times:', section.meetingTimes);
-
     const allProfessors = section.meetingTimes
-      .map(meeting => {
-        console.log('Meeting instructor:', meeting.instructor);
-        return meeting.instructor;
-      })
+      .map(meeting => meeting.instructor)
       .filter(instructor => instructor && !instructor.includes('TBA') && instructor.trim() !== '')
       .flatMap(instructor => instructor.split(','))
       .map(name => name.trim())
       .filter(name => name && !name.includes('TBA') && name.length > 0);
 
-    console.log('All professors before deduplication:', allProfessors);
-
     // Remove duplicates
     const uniqueProfessors = [...new Set(allProfessors)];
-    console.log('Unique professors:', uniqueProfessors);
-
     return uniqueProfessors;
   };
 
@@ -50,10 +40,8 @@ const SectionDetails = ({ section }: SectionDetailsProps) => {
   useEffect(() => {
     const fetchProfessorsInfo = async () => {
       const professorNames = extractProfessorNames(section);
-      console.log('Extracted professor names:', professorNames);
 
       if (professorNames.length === 0) {
-        console.log('No professor names found, skipping fetch');
         return;
       }
 
@@ -61,22 +49,17 @@ const SectionDetails = ({ section }: SectionDetailsProps) => {
       try {
         const professorPromises = professorNames.map(async (name) => {
           try {
-            console.log(`Fetching professor info for: "${name}"`);
-            console.log(`Original name: "${name}"`);
-            console.log(`Encoded name: "${encodeURIComponent(name)}"`);
-         
             const url = `http://localhost:3000/professors`;
-            console.log(`Full URL: ${url}`);
-            
+
+            //DNT THIS, IT WILL BREAK DOWN OTHERWISE
+            const cleanName = name.trim().replace(/\s+/g, ' '); 
+
             const response = await axios.get(url, {
-              params: { name: name }
+              params: { name: cleanName }
             });
 
-            console.log(`Response for ${name}:`, response);
-            if (response.data.success && response.data.professors.length > 0) {
-              return { name, info: response.data.professors[0] };
-            }
-            return null;
+            return { name, info: response.data.professors[0] };
+
           } catch (error) {
             console.warn(`Failed to fetch info for professor: ${name}`, error);
             return null;
@@ -92,7 +75,6 @@ const SectionDetails = ({ section }: SectionDetailsProps) => {
           }
         });
 
-        console.log('Final professors map:', professorsMap);
         setProfessorsInfo(professorsMap);
       } catch (error) {
         console.error('Error fetching professors info:', error);
@@ -104,34 +86,33 @@ const SectionDetails = ({ section }: SectionDetailsProps) => {
     fetchProfessorsInfo();
   }, [section]);
 
-  // Render professor info
-  const renderProfessorInfo = (instructorName: string) => {
-    if (!instructorName || instructorName.includes('TBA')) {
+  const renderAllProfessors = () => {
+    const professorNames = extractProfessorNames(section);
+
+    if (professorNames.length === 0) {
       return <span className="text-gray-500">TBA</span>;
     }
 
-    const professorNames = instructorName.split(',').map(name => name.trim());
-
     return (
-      <div className="space-y-1">
+      <div className="space-y-2">
         {professorNames.map((name, idx) => {
           const professorInfo = professorsInfo[name];
 
           if (professorInfo) {
             return (
-              <div key={idx} className="text-xs bg-blue-50 dark:bg-blue-900/20 rounded p-2 border border-blue-200 dark:border-blue-700">
-                <div className="font-medium text-blue-800 dark:text-blue-300">{name}</div>
-                <div className="text-blue-600 dark:text-blue-400 space-y-0.5">
-                  <div>⭐ {professorInfo.avg_rating.toFixed(1)}/5 ({professorInfo.num_ratings} reviews)</div>
-                  <div>📊 Difficulty: {professorInfo.avg_difficulty.toFixed(1)}/5</div>
-                  <div>🔄 Would take again: {professorInfo.would_take_again_percent}%</div>
-                  <div className="text-xs text-blue-500 dark:text-blue-400">{professorInfo.department}</div>
+              <div key={idx} className="text-xs text-gray-600 dark:text-gray-400">
+                <div className="font-medium text-gray-700 dark:text-gray-300">{name}</div>
+                <div className="space-y-0.5 mt-1 text-xs">
+                  <div>Rating: {professorInfo.avg_rating.toFixed(1)}/5 ({professorInfo.num_ratings} reviews)</div>
+                  <div>Difficulty: {professorInfo.avg_difficulty.toFixed(1)}/5</div>
+                  <div>Would take again: {professorInfo.would_take_again_percent}%</div>
+                  <div className="text-gray-500 dark:text-gray-500">{professorInfo.department}</div>
                 </div>
               </div>
             );
           } else if (loadingProfessors) {
             return (
-              <div key={idx} className="text-xs text-gray-500">
+              <div key={idx} className="text-xs text-gray-600 dark:text-gray-400">
                 {name} <span className="animate-pulse">(loading...)</span>
               </div>
             );
@@ -148,9 +129,10 @@ const SectionDetails = ({ section }: SectionDetailsProps) => {
   };
 
   return (
-    <div className='text-sm space-y-3'>
+    <div className='text-sm space-y-4'>
       {/* Course Information Grid */}
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+        {/* Course Details */}
         <div className='space-y-2'>
           <div className='font-semibold text-gray-900 dark:text-white'>Course Details</div>
           <div className='space-y-1'>
@@ -163,20 +145,6 @@ const SectionDetails = ({ section }: SectionDetailsProps) => {
             <div className='text-gray-600 dark:text-gray-400'>
               <span className='font-medium'>CRN:</span> {section.crn}
             </div>
-            <div className='text-gray-600 dark:text-gray-400'>
-              <span className='font-medium'>Seats Available:</span>
-              <span className={`ml-1 ${parseInt(section.seatsAvailable) > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {section.seatsAvailable}
-              </span>
-            </div>
-            {section.waitlist && (
-              <div className='text-gray-600 dark:text-gray-400'>
-                <span className='font-medium'>Waitlist:</span>
-                <span className={`ml-1 ${section.waitlist === 'Cancelled' ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400'}`}>
-                  {section.waitlist}
-                </span>
-              </div>
-            )}
             {section.additionalFees && (
               <div className='text-gray-600 dark:text-gray-400'>
                 <span className='font-medium'>Additional Fees:</span> {section.additionalFees}
@@ -190,34 +158,12 @@ const SectionDetails = ({ section }: SectionDetailsProps) => {
           </div>
         </div>
 
+        {/* Instructors Information */}
         <div className='space-y-2'>
-          <div className='font-semibold text-gray-900 dark:text-white'>Meeting Times & Instructors</div>
-          {section.meetingTimes.map((meeting, idx) => (
-            <div key={idx} className=' border-gray-200 dark:border-zinc-700'>
-              <div className='space-y-1'>
-                <div className='text-gray-600 dark:text-gray-400'>
-                  <span className='font-medium'>Type:</span> {meeting.sectionType}
-                </div>
-                <div className='text-gray-600 dark:text-gray-400'>
-                  <span className='font-medium'>Days:</span> {formatDays(meeting.days) || 'Online'}
-                </div>
-                <div className='text-gray-600 dark:text-gray-400'>
-                  <span className='font-medium'>Time:</span> {formatTime(meeting.time)}
-                </div>
-                <div className='text-gray-600 dark:text-gray-400'>
-                  <span className='font-medium'>Room:</span> {meeting.room}
-                </div>
-                <div className="space-y-1">
-                  <div className='text-gray-600 dark:text-gray-400'>
-                    <span className='font-medium'>Instructor:</span>
-                  </div>
-                  <div >
-                    {renderProfessorInfo(meeting.instructor)}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+          <div className='font-semibold text-gray-900 dark:text-white'>Instructors</div>
+          <div>
+            {renderAllProfessors()}
+          </div>
         </div>
       </div>
     </div>
