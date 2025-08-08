@@ -265,7 +265,6 @@ const handleGetAggregatedSectionsAndMeetings = async (
       .sort({ subject: 1, courseCode: 1, section: 1 })
       .lean();
 
-    console.log("Sections found:", sections);
     if (sections.length === 0) {
       res.json({
         success: true,
